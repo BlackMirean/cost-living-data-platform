@@ -108,6 +108,12 @@ class Settings(BaseSettings):
     nlp_bulk_size: int = 500
     nlp_processing_stale_minutes: int = 120
     api_cache_ttl_seconds: float = 30.0
+    redis_enabled: bool = False
+    redis_url: str = "redis://localhost:6379/0"
+    redis_queue_prefix: str = "cost_living_pipeline"
+    redis_lock_ttl_seconds: int = 900
+    redis_event_ttl_seconds: int = 86400
+    redis_event_queue_max_length: int = 500
 
     @property
     def cost_of_living_query_list(self) -> list[str]:

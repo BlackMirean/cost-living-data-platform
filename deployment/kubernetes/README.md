@@ -15,6 +15,8 @@ Fission handles scheduled ingestion and processing. Kubernetes serves the API.
 | `api-service.yaml` | API Service |
 | `api-hpa.yaml` | Optional horizontal pod autoscaler |
 
+The API can also report Redis runtime queue status when Redis is enabled through `REDIS_ENABLED=true`.
+
 ## Image
 
 Build and push the API image:
@@ -38,6 +40,14 @@ kubectl apply -f deployment/kubernetes/configmap.yaml
 kubectl apply -f deployment/kubernetes/api-deployment.yaml
 kubectl apply -f deployment/kubernetes/api-service.yaml
 ```
+
+Optional Redis runtime queue:
+
+```bash
+kubectl apply -f deployment/redis/redis.yaml
+```
+
+After Redis is deployed, set `REDIS_ENABLED=true` in `configmap.yaml` before applying the API and Fission ConfigMaps.
 
 Optional HPA:
 

@@ -53,9 +53,28 @@ cost_living_monthly_topic_metrics
 
 Detailed commands are in [package_commands.md](package_commands.md).
 
+## Optional Redis Runtime Queue
+
+The Fission handlers use Redis when `REDIS_ENABLED=true`. Redis provides job locks and recent lifecycle events; it does not replace Elasticsearch document storage or NLP processing state.
+
+Deploy Redis first:
+
+```bash
+kubectl apply -f deployment/redis/redis.yaml
+```
+
+Then set:
+
+```yaml
+REDIS_ENABLED: "true"
+REDIS_URL: "redis://redis.redis.svc.cluster.local:6379/0"
+```
+
+When Redis is disabled or unreachable, jobs fail open and continue without distributed locks.
+
 ## Notes
 
 - Do not commit real credentials.
 - Keep API serving outside Fission to avoid duplicate API deployments.
 - Keep timer schedules staggered so harvesters, integration and NLP processing do not all start at once.
-- Source registration lives in `backend/common/source_registry.py`.
+- Source plugins live in `backend/platforms/plugins.py` and are exposed through `backend/common/source_registry.py`.

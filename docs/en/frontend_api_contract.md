@@ -51,6 +51,7 @@ If both `source_group` and `platform` are provided, the backend applies their in
 | --- | --- |
 | `GET /health` | API and Elasticsearch health |
 | `GET /pipeline/status` | Raw, processed, discarded, failed and CPI counts |
+| `GET /pipeline/runtime` | Optional Redis runtime queue status |
 | `GET /stats/overview` | High-level document and sentiment summary |
 | `GET /trends/documents` | Document counts over time |
 | `GET /categories/counts` | Topic/category counts |
@@ -60,6 +61,7 @@ If both `source_group` and `platform` are provided, the backend applies their in
 | `GET /data-quality/comparison` | Quality comparison by source |
 | `GET /media/coverage` | GDELT media coverage trends |
 | `GET /platforms/categories` | Platform-topic matrix |
+| `GET /platforms/plugins` | Current platform plugin catalog and index isolation status |
 | `GET /trends/categories` | Topic trends by period |
 | `GET /trends/sentiment` | Sentiment trends by period |
 | `GET /official/comparison` | ABS CPI and discussion comparison |
@@ -69,6 +71,8 @@ If both `source_group` and `platform` are provided, the backend applies their in
 | `GET /logs/errors` | Recent NLP processing errors |
 
 Prefix these paths with `/api/cost-living` in deployed and notebook clients.
+
+`GET /platforms/plugins` returns the current static source plugin catalog. Each item includes the platform name, source group, configured raw index, expected raw stream index, Fission handler list, schedule list and whether the configured index matches the platform-specific stream.
 
 ## Client Pattern
 

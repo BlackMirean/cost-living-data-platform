@@ -7,49 +7,18 @@ raw integrator, NLP worker and API source grouping can share this registry.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Any
 
 from backend.common.config import settings
+from backend.platforms.base import PlatformPlugin
+from backend.platforms.plugins import PLATFORM_PLUGINS
 
 
-@dataclass(frozen=True)
-class SourceDefinition:
-    """Static metadata for one supported data source."""
-
-    name: str
-    source_group: str
-    raw_index_setting: str
-    platform_raw_index: str
-    source_label: str
-    has_engagement_metrics: bool = False
+SourceDefinition = PlatformPlugin
 
 
 SOURCE_REGISTRY: dict[str, SourceDefinition] = {
-    "bluesky": SourceDefinition(
-        name="bluesky",
-        source_group="social",
-        raw_index_setting="bluesky_stream_raw_index",
-        platform_raw_index="cost_living_bluesky_raw_stream",
-        source_label="bluesky_raw_stream",
-        has_engagement_metrics=True,
-    ),
-    "mastodon": SourceDefinition(
-        name="mastodon",
-        source_group="social",
-        raw_index_setting="mastodon_stream_raw_index",
-        platform_raw_index="cost_living_mastodon_raw_stream",
-        source_label="mastodon_raw_stream",
-        has_engagement_metrics=True,
-    ),
-    "gdelt": SourceDefinition(
-        name="gdelt",
-        source_group="media",
-        raw_index_setting="gdelt_gkg_raw_index",
-        platform_raw_index="cost_living_gdelt_raw_stream",
-        source_label="gdelt_gkg_raw",
-        has_engagement_metrics=False,
-    ),
+    plugin.name: plugin for plugin in PLATFORM_PLUGINS
 }
 
 
@@ -109,4 +78,14 @@ def platform_index_mismatches(settings_obj: Any = settings) -> dict[str, dict[st
         }
         for name, source in SOURCE_REGISTRY.items()
         if configured.get(name) != source.platform_raw_index
+    }
+
+
+def platform_plugin_metadata(settings_obj: Any = settings) -> dict[str, Any]:
+    plugins = [plugin.public_metadata(settings_obj) for plugin in SOURCE_REGISTRY.values()]
+    return {
+        "plugins": plugins,
+        "count": len(plugins),
+        "groups": source_group_platforms(),
+        "index_mismatches": platform_index_mismatches(settings_obj),
     }

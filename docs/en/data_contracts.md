@@ -16,13 +16,13 @@ The raw integrator reads only these configured platform stream indices. This kee
 
 The unified raw index may also contain historical seed records imported from an earlier compatible collection. Their `source_index` values are kept unchanged for provenance. Do not rewrite them to make old data look like current harvest output.
 
-Source metadata is centralized in:
+Source metadata is centralized in static platform plugins:
 
 ```text
-backend/common/source_registry.py
+backend/platforms/plugins.py
 ```
 
-The registry defines each source name, source group, raw stream index, optimized stream index and label.
+The compatibility registry in `backend/common/source_registry.py` exposes plugin metadata to the raw integrator, NLP worker and API. Each plugin defines the source name, source group, raw stream index, optimized stream index, label, Fission handler list and schedule list.
 
 | Source | Source group | Raw stream index |
 | --- | --- | --- |
@@ -30,7 +30,7 @@ The registry defines each source name, source group, raw stream index, optimized
 | `mastodon` | `social` | `cost_living_mastodon_raw_stream` |
 | `gdelt` | `media` | `cost_living_gdelt_raw_stream` |
 
-This is a Level 1 extension point. Source metadata lives in one place. It is not runtime plugin loading.
+This is a Level 1 extension point. Source metadata lives in one place and only covers platforms currently deployed by this project.
 
 ## 2. Unified Raw Data
 

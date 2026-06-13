@@ -8,6 +8,8 @@ def test_openapi_includes_cost_of_living_routes():
     schema = client.get("/openapi.json").json()
     paths = schema["paths"]
     assert "/api/pipeline/status" in paths
+    assert "/api/pipeline/runtime" in paths
+    assert "/api/platforms/plugins" in paths
     assert "/api/stats/overview" in paths
     assert "/api/categories/counts" in paths
     assert "/api/categories/sentiment" in paths
@@ -35,3 +37,17 @@ def test_cost_living_prefix_rewrites_to_api_routes(monkeypatch):
 
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
+
+
+def test_platform_plugins_route_exposes_current_sources():
+    client = TestClient(app)
+
+    response = client.get("/api/platforms/plugins")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert [plugin["name"] for plugin in payload["plugins"]] == ["bluesky", "mastodon", "gdelt"]
+    assert payload["groups"] == {"social": ["bluesky", "mastodon"], "media": ["gdelt"]}
+    mastodon = next(plugin for plugin in payload["plugins"] if plugin["name"] == "mastodon")
+    assert len(mastodon["fission_handlers"]) == 3
+    assert len(mastodon["schedules"]) == 3

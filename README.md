@@ -35,6 +35,11 @@ flowchart LR
         CPI["Official indicators"]
     end
 
+    subgraph RQ["Optional Redis runtime queue"]
+        LOCKS["job locks"]
+        EVENTS["pipeline events"]
+    end
+
     subgraph ES["Elasticsearch"]
         BSR[("bluesky raw stream")]
         MAR[("mastodon raw stream")]
@@ -56,6 +61,12 @@ flowchart LR
     GD --> HGD --> GDR --> RAWINT
     RAWINT --> RAW --> NLP --> PROC --> ALIAS
     ABS --> CPI --> IND
+    HBS -. lock/event .-> LOCKS
+    HMA -. lock/event .-> LOCKS
+    HGD -. lock/event .-> EVENTS
+    RAWINT -. lock/event .-> EVENTS
+    NLP -. lock/event .-> EVENTS
+    CPI -. lock/event .-> EVENTS
     RAW --> ROUTES
     ALIAS --> ROUTES
     IND --> ROUTES
@@ -63,6 +74,8 @@ flowchart LR
 ```
 
 The public architecture deliberately has one API path: FastAPI. Fission is used for scheduled ingestion and processing jobs, not as a second copy of the analytics API.
+
+Redis is optional and is used only for runtime coordination: scheduled job locks and recent pipeline lifecycle events. Elasticsearch remains the source of truth for documents, processing status and analytics.
 
 ## Repository Layout
 
@@ -105,6 +118,8 @@ Main endpoints:
 ```text
 GET /api/cost-living/health
 GET /api/cost-living/pipeline/status
+GET /api/cost-living/pipeline/runtime
+GET /api/cost-living/platforms/plugins
 GET /api/cost-living/stats/overview
 GET /api/cost-living/trends/documents
 GET /api/cost-living/categories/counts
@@ -192,18 +207,27 @@ The deployment templates are split by responsibility:
 | --- | --- |
 | [deployment/kubernetes](deployment/kubernetes) | FastAPI API Deployment, Service and optional HPA |
 | [deployment/fission](deployment/fission) | Scheduled ingestion and processing functions |
+| [deployment/redis](deployment/redis) | Optional Redis runtime queue and job locks |
 | [deployment/docker/api.Dockerfile](deployment/docker/api.Dockerfile) | API image build |
 
 The Kubernetes API manifest expects a built image. Replace `ghcr.io/your-username/cost-living-platform-api:latest` with your registry image before applying it.
 
 Fission manifests include only scheduled pipeline jobs. They do not deploy duplicate HTTP API functions.
 
+Deploy Redis only when you want distributed job locks and runtime event diagnostics:
+
+```bash
+kubectl apply -f deployment/redis/redis.yaml
+```
+
+Then set `REDIS_ENABLED=true` in the API and Fission ConfigMaps.
+
 ## Validation
 
 Current repository validation:
 
 ```text
-43 pytest tests passing
+50 pytest tests passing
 ```
 
 Useful checks:

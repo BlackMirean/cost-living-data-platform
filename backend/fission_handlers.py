@@ -12,6 +12,7 @@ from backend.harvesters.streams.mastodon import (
 )
 from backend.harvesters.unified_raw_sync import sync_platform_raw_posts, sync_unified_raw_posts
 from backend.processing.nlp_worker import process_batch as process_nlp_batch
+from backend.common.runtime_queue import run_pipeline_job
 
 
 def harvest_cpi() -> dict:
@@ -51,50 +52,65 @@ def sync_raw_streams() -> dict:
 def cost_living_platform_harvest_bluesky() -> dict:
     from backend.harvesters.streams import bluesky
 
-    bluesky.FUNCTION_NAME = "cost-living-platform-bluesky-harvester"
-    return bluesky.main()
+    job_name = "cost-living-platform-bluesky-harvester"
+    bluesky.FUNCTION_NAME = job_name
+    return run_pipeline_job(job_name, bluesky.main)
 
 
 def cost_living_platform_harvest_mastodon_au() -> dict:
     from backend.harvesters.streams import mastodon
 
+    job_name = "cost-living-platform-mastodon-au-harvester"
     mastodon.configure_stream("mastodon_au")
-    mastodon.FUNCTION_NAME = "cost-living-platform-mastodon-au-harvester"
-    return mastodon.main()
+    mastodon.FUNCTION_NAME = job_name
+    return run_pipeline_job(job_name, mastodon.main)
 
 
 def cost_living_platform_harvest_mastodon_social() -> dict:
     from backend.harvesters.streams import mastodon
 
+    job_name = "cost-living-platform-mastodon-social-harvester"
     mastodon.configure_stream("mastodon_social")
-    mastodon.FUNCTION_NAME = "cost-living-platform-mastodon-social-harvester"
-    return mastodon.main()
+    mastodon.FUNCTION_NAME = job_name
+    return run_pipeline_job(job_name, mastodon.main)
 
 
 def cost_living_platform_harvest_aus_social() -> dict:
     from backend.harvesters.streams import mastodon
 
+    job_name = "cost-living-platform-aus-social-harvester"
     mastodon.configure_stream("aus_social")
-    mastodon.FUNCTION_NAME = "cost-living-platform-aus-social-harvester"
-    return mastodon.main()
+    mastodon.FUNCTION_NAME = job_name
+    return run_pipeline_job(job_name, mastodon.main)
 
 
 def cost_living_platform_harvest_gdelt() -> dict:
     from backend.harvesters.streams import gdelt_gkg
 
-    gdelt_gkg.FUNCTION_NAME = "cost-living-platform-gdelt-harvester"
-    return gdelt_gkg.main()
+    job_name = "cost-living-platform-gdelt-harvester"
+    gdelt_gkg.FUNCTION_NAME = job_name
+    return run_pipeline_job(job_name, gdelt_gkg.main)
 
 
 def cost_living_platform_sync_raw() -> dict:
-    return {"source": "cost_living_platform_raw_integrator", **sync_platform_raw_posts()}
+    job_name = "cost-living-platform-raw-integrator"
+    return run_pipeline_job(
+        job_name,
+        lambda: {"source": "cost_living_platform_raw_integrator", **sync_platform_raw_posts()},
+    )
 
 
 def cost_living_platform_process_nlp() -> dict:
-    counts = process_nlp_batch()
-    return {"source": "cost_living_platform_nlp_processor", **counts}
+    job_name = "cost-living-platform-nlp-processor"
+    return run_pipeline_job(
+        job_name,
+        lambda: {"source": "cost_living_platform_nlp_processor", **process_nlp_batch()},
+    )
 
 
 def cost_living_platform_harvest_cpi() -> dict:
-    count = harvest_abs_cpi(reset=False)
-    return {"source": "cost_living_platform_official_indicators", "indexed": count}
+    job_name = "cost-living-platform-official-indicators"
+    return run_pipeline_job(
+        job_name,
+        lambda: {"source": "cost_living_platform_official_indicators", "indexed": harvest_abs_cpi(reset=False)},
+    )

@@ -4,6 +4,7 @@ The platform monitors Australian cost-of-living pressure using public social pos
 
 - Fission scheduled jobs for ingestion, raw integration, NLP processing and CPI updates.
 - A single FastAPI REST API for all dashboard and notebook reads.
+- Optional Redis runtime coordination for scheduled job locks and recent event diagnostics.
 
 Fission is not used as a duplicate HTTP API layer in the public version.
 
@@ -25,6 +26,11 @@ flowchart LR
         RAWINT["Raw integrator"]
         NLP["NLP processor"]
         CPI["Official indicators"]
+    end
+
+    subgraph Redis["Optional Redis"]
+        LOCKS["job locks"]
+        EVENTS["pipeline events"]
     end
 
     subgraph ES["Elasticsearch"]
@@ -49,6 +55,12 @@ flowchart LR
     GD --> HGD --> GDR --> RAWINT
     RAWINT --> RAW --> NLP --> PROC --> ALIAS
     ABS --> CPI --> IND
+    HBS -. lock/event .-> LOCKS
+    HMA -. lock/event .-> LOCKS
+    HGD -. lock/event .-> EVENTS
+    RAWINT -. lock/event .-> EVENTS
+    NLP -. lock/event .-> EVENTS
+    CPI -. lock/event .-> EVENTS
     PROC -. optional .-> ROLLUP
     RAW --> ROUTES
     ALIAS --> ROUTES
@@ -59,7 +71,7 @@ flowchart LR
 
 ## Design Choices
 
-Source metadata is centralised in [backend/common/source_registry.py](../../backend/common/source_registry.py). The registry records source names, source groups, configured raw indices, platform raw indices and source labels. The raw integrator, NLP worker and analytics API all read from the same registry.
+Source metadata is centralised in platform plugins under [backend/platforms](../../backend/platforms). [backend/common/source_registry.py](../../backend/common/source_registry.py) exposes those plugins to the raw integrator, NLP worker and analytics API.
 
 The API reads processed data through the `cost_living_posts_current` alias. This keeps frontend paths stable when the processed index is rebuilt.
 
@@ -84,7 +96,19 @@ Raw records start with `analysis_status = pending`. The NLP worker atomically cl
 
 Stable document ids make repeated harvesting idempotent. Stale `processing` records can be retried after `NLP_PROCESSING_STALE_MINUTES`.
 
-This is an Elasticsearch-backed work queue, not a general-purpose message broker. It is adequate for the batch-oriented harvesting workload and keeps operational complexity low.
+Elasticsearch stores document processing state because the raw documents and status fields need to be queryable together. Redis is used at a different layer: optional distributed locks prevent overlapping timer executions, and a short event queue records job lifecycle events for runtime diagnostics.
+
+## Runtime Queue
+
+When `REDIS_ENABLED=true`, each Fission job:
+
+1. tries to acquire a Redis lock for its job name;
+2. emits a `started` event;
+3. runs the harvester, integrator or worker;
+4. emits `succeeded`, `failed` or `skipped` events;
+5. releases the lock.
+
+The API exposes the runtime queue configuration at `/api/cost-living/pipeline/runtime`.
 
 ## Source Groups
 
@@ -100,7 +124,7 @@ This distinction is important: GDELT measures media coverage, not personal senti
 
 1. Add a harvester for the new source.
 2. Write source records into a source-specific raw stream index.
-3. Register the source in `backend/common/source_registry.py`.
+3. Register the source as a platform plugin in `backend/platforms/plugins.py`.
 4. Add normalisation support in `scripts/import_raw_streams.py` when needed.
 5. Add Fission function and timer manifests.
 6. Run the raw integrator, NLP processor, API smoke test and notebook checks.

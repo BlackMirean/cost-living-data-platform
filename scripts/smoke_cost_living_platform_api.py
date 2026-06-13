@@ -14,6 +14,8 @@ import requests
 ENDPOINTS: list[tuple[str, dict[str, str]]] = [
     ("/health", {}),
     ("/pipeline/status", {}),
+    ("/pipeline/runtime", {}),
+    ("/platforms/plugins", {}),
     ("/stats/overview", {"source_group": "social", "quality": "clean"}),
     ("/trends/documents", {"period": "month", "source_group": "social", "quality": "clean"}),
     ("/categories/counts", {"source_group": "social", "quality": "clean"}),

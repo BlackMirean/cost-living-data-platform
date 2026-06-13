@@ -202,7 +202,7 @@ def main() -> int:
             print(f"- {failure}")
         return 1
 
-    print(f"Public release check passed for {len(files)} tracked files.")
+    print(f"Public release check passed for {len(files)} release files.")
     return 0
 
 

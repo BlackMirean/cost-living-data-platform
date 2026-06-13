@@ -9,8 +9,9 @@ from typing import Any
 
 from fastapi import FastAPI, Query
 
-from backend.common import analytics_store
+from backend.common import analytics_store, source_registry
 from backend.common.config import settings
+from backend.common.runtime_queue import runtime_queue_status
 
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
@@ -91,6 +92,16 @@ def health() -> dict[str, Any]:
 @app.get("/api/pipeline/status")
 def pipeline_status() -> dict[str, Any]:
     return cached(("pipeline_status",), analytics_store.pipeline_status)
+
+
+@app.get("/api/pipeline/runtime")
+def pipeline_runtime() -> dict[str, Any]:
+    return runtime_queue_status()
+
+
+@app.get("/api/platforms/plugins")
+def platform_plugins() -> dict[str, Any]:
+    return source_registry.platform_plugin_metadata()
 
 
 @app.get("/api/stats/overview")

@@ -14,13 +14,13 @@ cp .env.example .env
 Run tests:
 
 ```bash
-python -m pytest
+make ci
 ```
 
 Run the API:
 
 ```bash
-uvicorn backend.api.main:app --reload --port 8000
+make api
 ```
 
 Swagger UI:
@@ -46,6 +46,8 @@ Optional Kibana:
 ```bash
 docker compose --profile tools up kibana
 ```
+
+Docker Compose also starts Redis for runtime queue diagnostics. Fission jobs use the same Redis settings when `REDIS_ENABLED=true` in the cloud ConfigMaps.
 
 ## Elasticsearch Inspection
 
@@ -118,6 +120,7 @@ Check:
 
 ```bash
 curl -s http://127.0.0.1:8010/api/cost-living/health
+curl -s http://127.0.0.1:8010/api/cost-living/pipeline/runtime
 ```
 
 Use `api-hpa.yaml` only after metrics-server is available:
@@ -143,19 +146,31 @@ Deployment order:
 
 Detailed commands are in [deployment/fission/package_commands.md](../../deployment/fission/package_commands.md).
 
-## Source Registration
+## Optional Redis Runtime Queue
+
+Deploy Redis before enabling the runtime queue:
+
+```bash
+kubectl apply -f deployment/redis/redis.yaml
+```
+
+Set `REDIS_ENABLED=true` in both API and Fission ConfigMaps. Redis is used for scheduled job locks and lifecycle events; Elasticsearch still stores document state.
+
+## Source Plugins
 
 Source metadata is kept in:
 
 ```text
-backend/common/source_registry.py
+backend/platforms/plugins.py
 ```
+
+`backend/common/source_registry.py` exposes the plugin catalog to the API, integrator and NLP worker.
 
 Checklist for adding a source:
 
 1. Add or update the harvester.
 2. Write raw records into a source-specific raw stream index.
-3. Register the source in `source_registry.py`.
+3. Register the source in `backend/platforms/plugins.py`.
 4. Add normalisation logic in `scripts/import_raw_streams.py` if needed.
 5. Add deployment manifests.
 6. Run the raw integrator, NLP worker, API smoke test and notebook validation.
@@ -185,8 +200,8 @@ For a Kubernetes port-forward, use `API_BASE_URL=http://127.0.0.1:8010`.
 
 ## Validation Snapshot
 
-The repository-level test suite currently covers harvesters, NLP processing, analytics queries, source registry logic and API route wiring.
+The repository-level test suite currently covers harvesters, NLP processing, analytics queries, source plugins, Redis runtime queue logic and API route wiring.
 
 ```text
-43 pytest tests passing
+50 pytest tests passing
 ```
