@@ -11,7 +11,7 @@ from fastapi import FastAPI, Query
 
 from backend.common import analytics_store, source_registry
 from backend.common.config import settings
-from backend.common.runtime_queue import runtime_queue_status
+from backend.common.runtime_queue import runtime_queue_events, runtime_queue_status
 
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
@@ -97,6 +97,11 @@ def pipeline_status() -> dict[str, Any]:
 @app.get("/api/pipeline/runtime")
 def pipeline_runtime() -> dict[str, Any]:
     return runtime_queue_status()
+
+
+@app.get("/api/pipeline/events")
+def pipeline_events(limit: int = Query(default=50, ge=1, le=500)) -> dict[str, Any]:
+    return runtime_queue_events(limit=limit)
 
 
 @app.get("/api/platforms/plugins")

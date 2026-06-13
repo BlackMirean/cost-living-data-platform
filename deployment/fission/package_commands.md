@@ -98,3 +98,17 @@ cost_living_bluesky_raw_stream
 cost_living_mastodon_raw_stream
 cost_living_gdelt_raw_stream
 ```
+
+## GDELT Historical Backfill
+
+The backfill command uses the same GDELT GKG archive processor as the incremental Fission harvester:
+
+```bash
+python -m backend.harvesters.gdelt_backfill \
+  --start-date 2026-05-01 \
+  --end-date 2026-05-02 \
+  --max-archives 4 \
+  --dry-run
+```
+
+Remove `--dry-run` to process archives. The checkpoint path is controlled by `GDELT_GKG_BACKFILL_CHECKPOINT_PATH`.

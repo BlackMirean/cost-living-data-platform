@@ -24,11 +24,31 @@ def utc_now() -> str:
 def event_summary(event: dict[str, Any]) -> dict[str, Any]:
     return {
         "event_id": event.get("event_id"),
+        "run_id": event.get("run_id"),
         "job_name": event.get("job_name"),
         "status": event.get("status"),
         "emitted_at": event.get("emitted_at"),
         "duration_ms": event.get("duration_ms"),
+        "error": event.get("error"),
     }
+
+
+def log_job_event(event: dict[str, Any]) -> None:
+    logger.info(
+        json.dumps(
+            {
+                "event": "pipeline_job",
+                "event_id": event.get("event_id"),
+                "run_id": event.get("run_id"),
+                "job_name": event.get("job_name"),
+                "status": event.get("status"),
+                "duration_ms": event.get("duration_ms"),
+                "error": event.get("error"),
+            },
+            sort_keys=True,
+            default=str,
+        )
+    )
 
 
 @dataclass
@@ -116,11 +136,13 @@ class RedisRuntime:
         status: str,
         payload: dict[str, Any] | None = None,
         *,
+        run_id: str | None = None,
         error: str | None = None,
         duration_ms: float | None = None,
     ) -> dict[str, Any]:
         event = {
             "event_id": str(uuid.uuid4()),
+            "run_id": run_id,
             "job_name": job_name,
             "status": status,
             "emitted_at": utc_now(),
@@ -138,6 +160,29 @@ class RedisRuntime:
             self._available = False
             logger.warning("redis_event_emit_failed job=%s status=%s error=%s", job_name, status, exc)
         return event
+
+    def recent_events(self, limit: int = 50) -> dict[str, Any]:
+        capped_limit = max(1, min(int(limit), 500))
+        result: dict[str, Any] = {
+            "configured": bool(self.settings.redis_enabled),
+            "enabled": self.enabled,
+            "queue_key": self.queue_key,
+            "limit": capped_limit,
+            "events": [],
+        }
+        if not self.enabled:
+            return result
+        try:
+            raw_events = self.client.lrange(self.queue_key, -capped_limit, -1)
+            result["events"] = [event_summary(json.loads(item)) for item in raw_events]
+            result["count"] = len(result["events"])
+            result["available"] = True
+        except Exception as exc:
+            self._available = False
+            result["available"] = False
+            result["recent_event_error"] = str(exc)
+            result["enabled"] = self.enabled
+        return result
 
     def status(self) -> dict[str, Any]:
         result = {
@@ -165,6 +210,10 @@ def runtime_queue_status() -> dict[str, Any]:
     return RedisRuntime().status()
 
 
+def runtime_queue_events(limit: int = 50) -> dict[str, Any]:
+    return RedisRuntime().recent_events(limit=limit)
+
+
 def run_pipeline_job(
     job_name: str,
     job: Callable[[], dict[str, Any]],
@@ -175,9 +224,11 @@ def run_pipeline_job(
     """Run a scheduled job with optional Redis event logging and overlap protection."""
 
     runtime = runtime or RedisRuntime()
+    run_id = str(uuid.uuid4())
     lock = runtime.acquire_lock(job_name, ttl_seconds=lock_ttl_seconds)
     if not lock.acquired:
-        event = runtime.emit_event(job_name, "skipped", {"reason": "lock_held"})
+        event = runtime.emit_event(job_name, "skipped", {"reason": "lock_held"}, run_id=run_id)
+        log_job_event(event)
         return {
             "source": job_name,
             "skipped": True,
@@ -186,18 +237,27 @@ def run_pipeline_job(
         }
 
     started = time.perf_counter()
-    runtime.emit_event(job_name, "started")
+    started_event = runtime.emit_event(job_name, "started", run_id=run_id)
+    log_job_event(started_event)
     try:
         result = job()
     except Exception as exc:
         elapsed_ms = (time.perf_counter() - started) * 1000
-        runtime.emit_event(job_name, "failed", error=f"{type(exc).__name__}: {exc}", duration_ms=elapsed_ms)
+        failed_event = runtime.emit_event(
+            job_name,
+            "failed",
+            run_id=run_id,
+            error=f"{type(exc).__name__}: {exc}",
+            duration_ms=elapsed_ms,
+        )
+        log_job_event(failed_event)
         raise
     finally:
         lock.release()
 
     elapsed_ms = (time.perf_counter() - started) * 1000
-    event = runtime.emit_event(job_name, "succeeded", {"result": result}, duration_ms=elapsed_ms)
+    event = runtime.emit_event(job_name, "succeeded", {"result": result}, run_id=run_id, duration_ms=elapsed_ms)
+    log_job_event(event)
     if runtime.enabled and isinstance(result, dict):
         result.setdefault("runtime_queue", {"enabled": True, "event": event_summary(event)})
     return result

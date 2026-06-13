@@ -121,6 +121,7 @@ Check:
 ```bash
 curl -s http://127.0.0.1:8010/api/cost-living/health
 curl -s http://127.0.0.1:8010/api/cost-living/pipeline/runtime
+curl -s http://127.0.0.1:8010/api/cost-living/pipeline/events?limit=20
 ```
 
 Use `api-hpa.yaml` only after metrics-server is available:
@@ -155,6 +156,37 @@ kubectl apply -f deployment/redis/redis.yaml
 ```
 
 Set `REDIS_ENABLED=true` in both API and Fission ConfigMaps. Redis is used for scheduled job locks and lifecycle events; Elasticsearch still stores document state.
+
+## GDELT Archive Ingestion
+
+The production GDELT path uses the public GKG archive list:
+
+```text
+http://data.gdeltproject.org/gdeltv2/masterfilelist.txt
+```
+
+The incremental Fission function and historical backfill both use `backend/harvesters/gdelt_archive.py`. The processor downloads `.gkg.csv.zip` files, verifies md5 checksums, extracts CSV rows, filters for Australian cost-of-living records and writes to `cost_living_gdelt_raw_stream` with an explicit mapping.
+
+Backfill dry run:
+
+```bash
+python -m backend.harvesters.gdelt_backfill \
+  --start-date 2026-05-01 \
+  --end-date 2026-05-02 \
+  --max-archives 4 \
+  --dry-run
+```
+
+Backfill execution:
+
+```bash
+python -m backend.harvesters.gdelt_backfill \
+  --start-date 2026-05-01 \
+  --end-date 2026-05-02 \
+  --max-archives 4
+```
+
+The checkpoint path is controlled by `GDELT_GKG_BACKFILL_CHECKPOINT_PATH`. Re-running the same command skips completed archives unless `--no-resume` is used.
 
 ## Source Plugins
 
@@ -200,8 +232,8 @@ For a Kubernetes port-forward, use `API_BASE_URL=http://127.0.0.1:8010`.
 
 ## Validation Snapshot
 
-The repository-level test suite currently covers harvesters, NLP processing, analytics queries, source plugins, Redis runtime queue logic and API route wiring.
+The repository-level test suite currently covers harvesters, GDELT archive processing and backfill resume behaviour, NLP processing, analytics queries, source plugins, Redis runtime queue logic and API route wiring.
 
 ```text
-50 pytest tests passing
+53 pytest tests passing
 ```

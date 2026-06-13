@@ -15,7 +15,7 @@ Fission handles scheduled ingestion and processing. Kubernetes serves the API.
 | `api-service.yaml` | API Service |
 | `api-hpa.yaml` | Optional horizontal pod autoscaler |
 
-The API can also report Redis runtime queue status when Redis is enabled through `REDIS_ENABLED=true`.
+The API can also report Redis runtime queue status and recent pipeline events when Redis is enabled through `REDIS_ENABLED=true`.
 
 ## Image
 
@@ -63,6 +63,7 @@ kubectl -n cost-living port-forward svc/cost-living-platform-api 8010:80
 
 ```text
 http://127.0.0.1:8010/api/cost-living/health
+http://127.0.0.1:8010/api/cost-living/pipeline/events?limit=20
 http://127.0.0.1:8010/docs
 ```
 

@@ -22,7 +22,7 @@ The public architecture uses Fission for the data pipeline only. The analytics A
 | `cost-living-platform-mastodon-au-harvester` | timer | Harvest Mastodon AU records |
 | `cost-living-platform-mastodon-social-harvester` | timer | Harvest Mastodon social records |
 | `cost-living-platform-aus-social-harvester` | timer | Harvest Aus Social records |
-| `cost-living-platform-gdelt-harvester` | timer | Harvest GDELT GKG records |
+| `cost-living-platform-gdelt-harvester` | timer | Harvest incremental GDELT GKG archive records |
 | `cost-living-platform-raw-integrator` | timer | Integrate platform raw streams |
 | `cost-living-platform-nlp-processor` | timer | Process pending raw documents |
 | `cost-living-platform-official-indicators` | timer | Harvest ABS CPI observations |
@@ -71,6 +71,19 @@ REDIS_URL: "redis://redis.redis.svc.cluster.local:6379/0"
 ```
 
 When Redis is disabled or unreachable, jobs fail open and continue without distributed locks.
+
+## GDELT Archive Pipeline
+
+The GDELT function uses `backend/harvesters/streams/gdelt_gkg.py` for incremental scheduling and `backend/harvesters/gdelt_archive.py` for archive processing. Historical backfill uses `backend/harvesters/gdelt_backfill.py` and the same archive processor.
+
+Main settings:
+
+```yaml
+GDELT_GKG_MASTERFILELIST_URL: "http://data.gdeltproject.org/gdeltv2/masterfilelist.txt"
+GDELT_GKG_INCREMENTAL_BATCH_SIZE: "2"
+GDELT_GKG_INCREMENTAL_MAX_RUNTIME_SECONDS: "180"
+GDELT_GKG_BACKFILL_CHECKPOINT_PATH: "data/backfill_state/gdelt_gkg_backfill.json"
+```
 
 ## Notes
 

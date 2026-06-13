@@ -10,7 +10,7 @@ The system collects public data from Bluesky, Mastodon and GDELT, normalises raw
 | --- | --- | --- |
 | Bluesky | Public social discussion | Search-based harvesting with Australian context filtering |
 | Mastodon | Public social discussion | Multiple public instances, hashtag-oriented collection |
-| GDELT GKG | Media coverage | Treated as media attention, not direct public sentiment |
+| GDELT GKG | Media coverage | 15-minute public archive files, treated as media attention rather than direct public sentiment |
 | ABS Monthly CPI | Official indicator data | Used for monthly comparison, not causal modelling |
 
 The keyword taxonomy is intentionally explicit and versioned in [data/cost_of_living_keywords.csv](data/cost_of_living_keywords.csv). It covers housing, groceries, energy, fuel, transport, eating out, healthcare, home goods, education, inflation, wages and debt.
@@ -22,14 +22,14 @@ flowchart LR
     subgraph Sources["External sources"]
         BS["Bluesky"]
         MA["Mastodon"]
-        GD["GDELT GKG"]
+        GD["GDELT GKG archives"]
         ABS["ABS CPI API"]
     end
 
     subgraph Jobs["Fission scheduled jobs"]
         HBS["Bluesky harvester"]
         HMA["Mastodon harvesters"]
-        HGD["GDELT harvester"]
+        HGD["GDELT archive harvester"]
         RAWINT["Raw integrator"]
         NLP["NLP processor"]
         CPI["Official indicators"]
@@ -77,6 +77,8 @@ The public architecture deliberately has one API path: FastAPI. Fission is used 
 
 Redis is optional and is used only for runtime coordination: scheduled job locks and recent pipeline lifecycle events. Elasticsearch remains the source of truth for documents, processing status and analytics.
 
+GDELT ingestion uses the public GKG archive list at `masterfilelist.txt`. Incremental harvesting and historical backfill share the same archive processor: list archive metadata, download `.gkg.csv.zip` files, verify md5 checksums, extract CSV rows, filter for Australian cost-of-living signals and bulk index matching records. The GDELT DOC API helper is retained only for small diagnostic searches and is not part of the production ingestion path.
+
 ## Repository Layout
 
 ```text
@@ -119,6 +121,7 @@ Main endpoints:
 GET /api/cost-living/health
 GET /api/cost-living/pipeline/status
 GET /api/cost-living/pipeline/runtime
+GET /api/cost-living/pipeline/events
 GET /api/cost-living/platforms/plugins
 GET /api/cost-living/stats/overview
 GET /api/cost-living/trends/documents
@@ -227,7 +230,7 @@ Then set `REDIS_ENABLED=true` in the API and Fission ConfigMaps.
 Current repository validation:
 
 ```text
-50 pytest tests passing
+53 pytest tests passing
 ```
 
 Useful checks:

@@ -9,6 +9,7 @@ def test_openapi_includes_cost_of_living_routes():
     paths = schema["paths"]
     assert "/api/pipeline/status" in paths
     assert "/api/pipeline/runtime" in paths
+    assert "/api/pipeline/events" in paths
     assert "/api/platforms/plugins" in paths
     assert "/api/stats/overview" in paths
     assert "/api/categories/counts" in paths

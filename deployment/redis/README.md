@@ -6,7 +6,7 @@ Redis is used only for job-level runtime concerns:
 
 - distributed locks for scheduled jobs;
 - recent pipeline lifecycle events;
-- API diagnostics through `/api/cost-living/pipeline/runtime`.
+- API diagnostics through `/api/cost-living/pipeline/runtime` and `/api/cost-living/pipeline/events`.
 
 Elasticsearch remains the source of truth for raw documents, processed documents, status fields and analytics.
 

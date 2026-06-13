@@ -1,4 +1,4 @@
-from backend.harvesters.gdelt_news_harvester import (
+from backend.harvesters.gdelt_doc_search import (
     build_gdelt_query,
     is_gdelt_article_in_scope,
     parse_gdelt_date,
@@ -68,7 +68,7 @@ def test_search_gdelt_articles_uses_datetime_window(monkeypatch):
         captured["timeout"] = timeout
         return FakeResponse()
 
-    monkeypatch.setattr("backend.harvesters.gdelt_news_harvester.requests.get", fake_get)
+    monkeypatch.setattr("backend.harvesters.gdelt_doc_search.requests.get", fake_get)
 
     articles = search_gdelt_articles(
         query="rent increase",

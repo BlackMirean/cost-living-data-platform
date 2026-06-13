@@ -42,6 +42,10 @@ class FakeRedis:
     def llen(self, key):
         return len(self.lists.get(key, []))
 
+    def lrange(self, key, start, end):
+        values = self.lists.get(key, [])
+        return values[start : end + 1 if end != -1 else None]
+
 
 def queue_settings(enabled=True):
     return SimpleNamespace(
@@ -63,10 +67,12 @@ def test_pipeline_job_emits_events_and_releases_lock():
     assert result["ok"] is True
     assert result["runtime_queue"]["enabled"] is True
     assert result["runtime_queue"]["event"]["status"] == "succeeded"
+    assert result["runtime_queue"]["event"]["run_id"]
     json.dumps(result)
     assert client.values == {}
     events = [json.loads(item) for item in client.lists["test_pipeline:events"]]
     assert [event["status"] for event in events] == ["started", "succeeded"]
+    assert events[0]["run_id"] == events[1]["run_id"]
     assert events[1]["payload"]["result"] == {"ok": True}
 
 
@@ -81,6 +87,7 @@ def test_pipeline_job_skips_when_lock_is_held():
     assert result["reason"] == "lock_held"
     events = [json.loads(item) for item in client.lists["test_pipeline:events"]]
     assert events[0]["status"] == "skipped"
+    assert events[0]["run_id"]
 
 
 def test_pipeline_job_records_failure_event():
@@ -104,3 +111,16 @@ def test_runtime_status_when_disabled():
     assert status["enabled"] is False
     assert status["available"] is False
     assert status["queue_key"] == "test_pipeline:events"
+
+
+def test_runtime_recent_events_returns_bounded_json_events():
+    client = FakeRedis()
+    runtime = RedisRuntime(client=client, settings_obj=queue_settings())
+    run_pipeline_job("job-a", lambda: {"ok": True}, runtime=runtime)
+
+    recent = runtime.recent_events(limit=1)
+
+    assert recent["enabled"] is True
+    assert recent["count"] == 1
+    assert recent["events"][0]["status"] == "succeeded"
+    assert "payload" not in recent["events"][0]

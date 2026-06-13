@@ -15,14 +15,14 @@ flowchart LR
     subgraph Sources["External sources"]
         BS["Bluesky"]
         MA["Mastodon"]
-        GD["GDELT GKG"]
+        GD["GDELT GKG archives"]
         ABS["ABS CPI API"]
     end
 
     subgraph Jobs["Fission scheduled jobs"]
         HBS["Bluesky harvester"]
         HMA["Mastodon harvesters"]
-        HGD["GDELT harvester"]
+        HGD["GDELT archive harvester"]
         RAWINT["Raw integrator"]
         NLP["NLP processor"]
         CPI["Official indicators"]
@@ -75,6 +75,8 @@ Source metadata is centralised in platform plugins under [backend/platforms](../
 
 The API reads processed data through the `cost_living_posts_current` alias. This keeps frontend paths stable when the processed index is rebuilt.
 
+The GDELT path uses public GKG archive files, not rate-limited article search as the production data path. Incremental harvesting and historical backfill both call [backend/harvesters/gdelt_archive.py](../../backend/harvesters/gdelt_archive.py), which reads the master file list, downloads `.gkg.csv.zip` archives, verifies md5 checksums, filters rows and bulk indexes matching records.
+
 The raw and processed indices are separate. Failed NLP processing does not remove the original raw record, and status fields in the raw index make the pipeline inspectable.
 
 ## Indices
@@ -96,7 +98,7 @@ Raw records start with `analysis_status = pending`. The NLP worker atomically cl
 
 Stable document ids make repeated harvesting idempotent. Stale `processing` records can be retried after `NLP_PROCESSING_STALE_MINUTES`.
 
-Elasticsearch stores document processing state because the raw documents and status fields need to be queryable together. Redis is used at a different layer: optional distributed locks prevent overlapping timer executions, and a short event queue records job lifecycle events for runtime diagnostics.
+Elasticsearch stores document processing state because the raw documents and status fields need to be queryable together. Redis is used at a different layer: optional distributed locks prevent overlapping timer executions, and a short event queue records job lifecycle events with a `run_id` for runtime diagnostics.
 
 ## Runtime Queue
 
@@ -108,7 +110,7 @@ When `REDIS_ENABLED=true`, each Fission job:
 4. emits `succeeded`, `failed` or `skipped` events;
 5. releases the lock.
 
-The API exposes the runtime queue configuration at `/api/cost-living/pipeline/runtime`.
+The API exposes runtime queue configuration at `/api/cost-living/pipeline/runtime` and recent lifecycle events at `/api/cost-living/pipeline/events`.
 
 ## Source Groups
 

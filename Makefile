@@ -4,7 +4,11 @@ API_PORT ?= 8000
 API_BASE_URL ?= http://127.0.0.1:8000
 API_PREFIX ?= /api/cost-living
 
-.PHONY: install wait api test public-check ci smoke stress inspect-raw import-stream-dry rebuild-unified-raw sync-recent
+GDELT_GKG_BACKFILL_START ?= 2026-05-01
+GDELT_GKG_BACKFILL_END ?= 2026-05-02
+GDELT_GKG_BACKFILL_MAX_ARCHIVES ?= 4
+
+.PHONY: install wait api test public-check ci smoke stress gdelt-backfill-dry-run gdelt-backfill inspect-raw import-stream-dry rebuild-unified-raw sync-recent
 
 install:
 	$(PYTHON) -m pip install -r requirements.txt
@@ -28,6 +32,12 @@ smoke:
 
 stress:
 	$(PYTHON) scripts/stress_cost_living_platform_api.py --base-url $(API_BASE_URL) --prefix $(API_PREFIX) --rounds 10 --workers 3
+
+gdelt-backfill-dry-run:
+	$(PYTHON) -m backend.harvesters.gdelt_backfill --start-date $(GDELT_GKG_BACKFILL_START) --end-date $(GDELT_GKG_BACKFILL_END) --max-archives $(GDELT_GKG_BACKFILL_MAX_ARCHIVES) --dry-run
+
+gdelt-backfill:
+	$(PYTHON) -m backend.harvesters.gdelt_backfill --start-date $(GDELT_GKG_BACKFILL_START) --end-date $(GDELT_GKG_BACKFILL_END) --max-archives $(GDELT_GKG_BACKFILL_MAX_ARCHIVES)
 
 inspect-raw:
 	. scripts/load_cloud_env.sh && $(PYTHON) scripts/inspect_es_indices.py --indices cost_living_raw_posts --sample-size 3

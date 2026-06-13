@@ -1,0 +1,34 @@
+{
+  "mappings": {
+    "dynamic": false,
+    "properties": {
+      "platform": { "type": "keyword" },
+      "stage": { "type": "keyword" },
+      "category": { "type": "keyword" },
+      "search_term": { "type": "keyword" },
+      "source_id": { "type": "keyword" },
+      "url": { "type": "keyword" },
+      "domain": { "type": "keyword" },
+      "author_handle": { "type": "keyword" },
+      "author_display_name": { "type": "keyword" },
+      "text": { "type": "text" },
+      "created_at": { "type": "date" },
+      "like_count": { "type": "long" },
+      "reply_count": { "type": "long" },
+      "repost_count": { "type": "long" },
+      "quote_count": { "type": "long" },
+      "gkg_file_id": { "type": "keyword" },
+      "gkg_url": { "type": "keyword" },
+      "themes": { "type": "keyword", "ignore_above": 32766 },
+      "v2themes": { "type": "keyword", "ignore_above": 32766 },
+      "locations": { "type": "keyword", "ignore_above": 32766 },
+      "v2locations": { "type": "keyword", "ignore_above": 32766 },
+      "persons": { "type": "keyword", "ignore_above": 32766 },
+      "organizations": { "type": "keyword", "ignore_above": 32766 },
+      "tone": { "type": "keyword", "ignore_above": 4096 },
+      "all_names": { "type": "keyword", "ignore_above": 32766 },
+      "matched_terms": { "type": "keyword" },
+      "collected_at": { "type": "date" }
+    }
+  }
+}

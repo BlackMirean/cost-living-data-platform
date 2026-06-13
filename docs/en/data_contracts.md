@@ -14,6 +14,12 @@ cost_living_gdelt_raw_stream
 
 The raw integrator reads only these configured platform stream indices. This keeps ingestion inputs explicit and prevents accidental reads from unrelated Elasticsearch indices.
 
+GDELT raw stream records are produced from public GKG archive files listed in `masterfilelist.txt`. Both incremental harvesting and historical backfill use the same archive processor and explicit mapping in:
+
+```text
+database/mappings/gdelt_raw_stream.json
+```
+
 The unified raw index may also contain historical seed records imported from an earlier compatible collection. Their `source_index` values are kept unchanged for provenance. Do not rewrite them to make old data look like current harvest output.
 
 Source metadata is centralized in static platform plugins:

@@ -44,7 +44,7 @@ PLATFORM_PLUGINS: tuple[PlatformPlugin, ...] = (
         source_label="gdelt_gkg_raw",
         fission_handlers=("backend.fission_handlers.cost_living_platform_harvest_gdelt",),
         schedules=("4,19,34,49 * * * *",),
-        description="GDELT GKG media-attention harvester for cost-of-living coverage.",
+        description="GDELT GKG archive harvester using the public 15-minute master file list.",
         has_engagement_metrics=False,
     ),
 )

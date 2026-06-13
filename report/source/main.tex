@@ -46,7 +46,7 @@
 \maketitle
 
 \begin{abstract}
-This report describes a cloud data platform for monitoring Australian cost-of-living pressure through public social discussion, media coverage and official CPI indicators. The system collects public records from Bluesky, Mastodon and GDELT GKG, stores source-specific raw streams in Elasticsearch, normalises them into a unified raw index, processes text with topic classification and VADER sentiment, and serves analytics through a FastAPI REST API. ABS Monthly CPI observations are used as an official comparison signal rather than a causal label. The public version presents a single API serving path and uses Fission only for scheduled pipeline jobs, avoiding duplicate API deployments.
+This report describes a cloud data platform for monitoring Australian cost-of-living pressure through public social discussion, media coverage and official CPI indicators. The system collects public records from Bluesky, Mastodon and GDELT GKG archive files, stores source-specific raw streams in Elasticsearch, normalises them into a unified raw index, processes text with topic classification and VADER sentiment, and serves analytics through a FastAPI REST API. ABS Monthly CPI observations are used as an official comparison signal rather than a causal label. The public version presents a single API serving path and uses Fission only for scheduled pipeline jobs, avoiding duplicate API deployments.
 \end{abstract}
 
 \tableofcontents
@@ -80,7 +80,7 @@ Source & Role & Interpretation \\
 \midrule
 Bluesky & Public social discussion & Timely public posts, filtered for Australian context. Not population-representative. \\
 Mastodon & Public social discussion & Public posts from multiple instances, useful as a second social signal. \\
-GDELT GKG & Media coverage & News and media attention. It is not treated as public sentiment. \\
+GDELT GKG & Media coverage & Public 15-minute archive files used as media attention. It is not treated as public sentiment. \\
 ABS Monthly CPI & Official indicator & Monthly official price data for comparison, not causal modelling. \\
 \bottomrule
 \end{tabularx}
@@ -88,7 +88,7 @@ ABS Monthly CPI & Official indicator & Monthly official price data for compariso
 
 The collection taxonomy is explicit and versioned in \idx{data/cost\_of\_living\_keywords.csv}. It includes housing, groceries, energy, fuel, transport, eating out, healthcare, home goods, education, inflation, wages and debt. Terms were selected to cover common Australian cost categories, official CPI-aligned categories and locally meaningful signals such as major supermarket names, public transport terms and healthcare references. Source-specific collectors follow the public Bluesky, Mastodon and GDELT interfaces \cite{bluesky_api,mastodon_api,gdelt}, while official monthly indicators are obtained from ABS CPI documentation \cite{abs_api}.
 
-For social sources, a record must have a cost-of-living signal and Australian context. For GDELT, filtering is stricter because GKG records can contain metadata-heavy snippets. GDELT is analysed as media coverage, while Bluesky and Mastodon are grouped as social discussion.
+For social sources, a record must have a cost-of-living signal and Australian context. For GDELT, filtering is stricter because GKG records can contain metadata-heavy snippets. Incremental harvesting and historical backfill both use the same GKG archive processor: it reads the public master file list, downloads \idx{.gkg.csv.zip} archives, verifies md5 checksums, extracts CSV rows, filters for relevant Australian cost-of-living records and bulk indexes matching rows. GDELT is analysed as media coverage, while Bluesky and Mastodon are grouped as social discussion.
 
 \section{Architecture}
 
@@ -184,15 +184,16 @@ Important reliability choices include:
     \item a stable processed-data alias for API reads;
     \item short API response caching to reduce repeated aggregation load;
     \item request logging in the FastAPI layer;
+    \item Redis-backed job locks, lifecycle events and run identifiers for scheduled jobs;
     \item Kubernetes ConfigMaps and Secrets for environment-specific configuration.
 \end{itemize}
 
 \section{Validation and Results}
 
-The repository test suite covers harvester helpers, ABS CPI parsing, GDELT filtering, source registry logic, NLP processing, analytics store behaviour and API route wiring. The current public branch passes:
+The repository test suite covers harvester helpers, ABS CPI parsing, GDELT archive processing, GDELT backfill resume behaviour, source registry logic, NLP processing, Redis runtime queue behaviour, analytics store behaviour and API route wiring. The current public branch passes:
 
 \begin{center}
-\idx{43 pytest tests passing}
+\idx{53 pytest tests passing}
 \end{center}
 
 The original cloud run processed approximately 245k raw documents, 225k processed documents and 10,134 ABS CPI observations. These counts are a snapshot of the historical run, not a live service guarantee.
@@ -261,7 +262,7 @@ The CPI comparison is descriptive. CPI measures official price movement, while s
 
 \section{Conclusion}
 
-The platform demonstrates a maintainable cloud analytics pattern for public text and official indicator data. The strongest engineering choices are the separation of raw and processed data, explicit source registration, consistent index configuration, a single API serving path, and a testable FastAPI interface. The main analytical caution is that each source measures a different phenomenon: social discussion, media coverage and official price indicators should be compared carefully rather than merged into one sentiment claim.
+The platform demonstrates a maintainable cloud analytics pattern for public text and official indicator data. The strongest engineering choices are the separation of raw and processed data, explicit source registration, archive-based GDELT ingestion for both incremental and historical runs, consistent index configuration, a single API serving path, Redis-backed runtime diagnostics, and a testable FastAPI interface. The main analytical caution is that each source measures a different phenomenon: social discussion, media coverage and official price indicators should be compared carefully rather than merged into one sentiment claim.
 
 \bibliographystyle{plain}
 \bibliography{references}

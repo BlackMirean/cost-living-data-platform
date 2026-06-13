@@ -1,4 +1,9 @@
-"""GDELT DOC API raw harvester helpers for the cost-of-living scenario."""
+"""Optional GDELT DOC API search helpers.
+
+Production ingestion uses the GDELT GKG archive pipeline in
+``backend.harvesters.gdelt_archive``. This module is kept for small diagnostic
+searches and tests only.
+"""
 
 from __future__ import annotations
 
