@@ -1,0 +1,15 @@
+elasticsearch>=8.17,<9
+fastapi>=0.115,<1
+httpx>=0.28,<1
+jupyter>=1.1,<2
+matplotlib>=3.9,<4
+numpy>=1.26,<3
+pandas>=2.2,<3
+pydantic>=2.10,<3
+pydantic-settings>=2.7,<3
+pytest>=8.3,<9
+python-dotenv>=1.0,<2
+requests>=2.32,<3
+seaborn>=0.13,<1
+uvicorn[standard]>=0.34,<1
+vaderSentiment>=3.3,<4

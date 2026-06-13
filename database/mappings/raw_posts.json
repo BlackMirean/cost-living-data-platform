@@ -1,0 +1,123 @@
+{
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 1
+  },
+  "mappings": {
+    "properties": {
+      "id": {
+        "type": "keyword"
+      },
+      "platform": {
+        "type": "keyword"
+      },
+      "source": {
+        "type": "keyword"
+      },
+      "source_id": {
+        "type": "keyword"
+      },
+      "source_index": {
+        "type": "keyword"
+      },
+      "source_es_id": {
+        "type": "keyword"
+      },
+      "stage": {
+        "type": "keyword"
+      },
+      "category": {
+        "type": "keyword"
+      },
+      "search_term": {
+        "type": "keyword"
+      },
+      "api_query": {
+        "type": "keyword"
+      },
+      "instance": {
+        "type": "keyword"
+      },
+      "author": {
+        "type": "keyword"
+      },
+      "author_handle": {
+        "type": "keyword"
+      },
+      "author_display_name": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "ignore_above": 256
+          }
+        }
+      },
+      "location_hint": {
+        "type": "keyword"
+      },
+      "text": {
+        "type": "text"
+      },
+      "harvested_query": {
+        "type": "keyword"
+      },
+      "url": {
+        "type": "keyword"
+      },
+      "created_at": {
+        "type": "date"
+      },
+      "harvested_at": {
+        "type": "date"
+      },
+      "collected_at": {
+        "type": "date"
+      },
+      "like_count": {
+        "type": "long"
+      },
+      "reply_count": {
+        "type": "long"
+      },
+      "repost_count": {
+        "type": "long"
+      },
+      "quote_count": {
+        "type": "long"
+      },
+      "has_engagement_metrics": {
+        "type": "boolean"
+      },
+      "domain": {
+        "type": "keyword"
+      },
+      "gkg_file_id": {
+        "type": "keyword"
+      },
+      "gkg_url": {
+        "type": "keyword"
+      },
+      "tone": {
+        "type": "keyword"
+      },
+      "analysis_status": {
+        "type": "keyword"
+      },
+      "analysis_started_at": {
+        "type": "date"
+      },
+      "analysis_processed_at": {
+        "type": "date"
+      },
+      "engagement": {
+        "type": "object",
+        "enabled": false
+      },
+      "payload": {
+        "type": "object",
+        "enabled": false
+      }
+    }
+  }
+}

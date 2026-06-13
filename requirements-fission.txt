@@ -1,0 +1,9 @@
+elasticsearch==8.14.0
+eval_type_backport>=0.2,<1
+fastapi>=0.115,<1
+pydantic>=2.10,<3
+pydantic-settings>=2.7,<3
+python-dotenv>=1.0,<2
+requests>=2.32,<3
+uvicorn[standard]>=0.34,<1
+vaderSentiment>=3.3,<4

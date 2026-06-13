@@ -1,0 +1,60 @@
+# macOS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+.ipynb_checkpoints/
+
+# Environment and cloud credentials
+.env
+.env.*
+!.env.example
+config.*.yaml
+*.kubeconfig
+
+# Build artifacts
+dist/
+build/
+*.zip
+*.tar
+*.tar.gz
+*.log
+
+# LaTeX generated files
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fls
+*.fdb_latexmk
+*.out
+*.run.xml
+*.synctex.gz
+*.toc
+
+# Frontend / JS tooling
+node_modules/
+
+# Local data and generated outputs
+data/raw/
+data/private/
+data/local_store/
+data/backfill_state/
+docs/generated/
+tmp/
+
+# Private/admin/report artifacts that should not be part of the public project repo
+docs/*.pdf
+docs/*.docx
+teamwork/
+video/

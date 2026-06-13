@@ -1,0 +1,52 @@
+{
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 1
+  },
+  "mappings": {
+    "properties": {
+      "metric_id": {
+        "type": "keyword"
+      },
+      "period": {
+        "type": "keyword"
+      },
+      "period_start": {
+        "type": "date"
+      },
+      "source_group": {
+        "type": "keyword"
+      },
+      "quality": {
+        "type": "keyword"
+      },
+      "cost_category": {
+        "type": "keyword"
+      },
+      "category_label": {
+        "type": "keyword"
+      },
+      "document_count": {
+        "type": "long"
+      },
+      "unique_document_count": {
+        "type": "long"
+      },
+      "duplicate_ratio": {
+        "type": "float"
+      },
+      "negative_count": {
+        "type": "long"
+      },
+      "negative_ratio": {
+        "type": "float"
+      },
+      "avg_sentiment": {
+        "type": "float"
+      },
+      "generated_at": {
+        "type": "date"
+      }
+    }
+  }
+}

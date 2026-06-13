@@ -1,0 +1,269 @@
+% !TEX program = xelatex
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[a4paper,margin=2.2cm]{geometry}
+\usepackage{fontspec}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{float}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{caption}
+
+\IfFontExistsTF{TeX Gyre Termes}{
+    \setmainfont{TeX Gyre Termes}
+}{
+    \setmainfont{Times New Roman}
+}
+\IfFontExistsTF{Latin Modern Mono}{
+    \setmonofont[Scale=0.9]{Latin Modern Mono}
+}{
+    \setmonofont[Scale=0.86]{Menlo}
+}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    citecolor=blue,
+    urlcolor=blue
+}
+
+\setlist[itemize]{leftmargin=1.5em}
+\renewcommand{\arraystretch}{1.15}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcommand{\idx}[1]{\texttt{#1}}
+
+\title{\textbf{Cost-of-Living Data Platform}\\
+\large Cloud Pipeline, Search Taxonomy, and Analytics API}
+\author{Project Contributors}
+\date{2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+This report describes a cloud data platform for monitoring Australian cost-of-living pressure through public social discussion, media coverage and official CPI indicators. The system collects public records from Bluesky, Mastodon and GDELT GKG, stores source-specific raw streams in Elasticsearch, normalises them into a unified raw index, processes text with topic classification and VADER sentiment, and serves analytics through a FastAPI REST API. ABS Monthly CPI observations are used as an official comparison signal rather than a causal label. The public version presents a single API serving path and uses Fission only for scheduled pipeline jobs, avoiding duplicate API deployments.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+\section{Scenario and Motivation}
+
+Cost-of-living pressure affects household decisions around rent, groceries, fuel, energy, healthcare, transport, education and debt. Official indicators such as CPI provide a stable statistical view, but they are released on a schedule and do not directly show what people and media outlets are discussing day by day. Public social posts and media records are timely but noisy, inconsistent and hard to inspect manually at scale.
+
+The platform therefore focuses on a repeatable monitoring workflow:
+
+\begin{itemize}
+    \item collect public source records on a schedule;
+    \item filter for Australian context and cost-of-living relevance;
+    \item preserve raw records and processing state;
+    \item process text into topics, sentiment labels and quality flags;
+    \item expose chart-ready analytics through a REST API;
+    \item compare selected discussion signals with official ABS CPI observations.
+\end{itemize}
+
+The aim is not to infer a representative measure of hardship. The aim is to build an inspectable data system that separates social discussion, media coverage and official indicators.
+
+\section{Data Sources and Search Terms}
+
+\begin{table}[H]
+\centering
+\caption{Data sources}
+\begin{tabularx}{\linewidth}{p{0.18\linewidth}p{0.22\linewidth}Y}
+\toprule
+Source & Role & Interpretation \\
+\midrule
+Bluesky & Public social discussion & Timely public posts, filtered for Australian context. Not population-representative. \\
+Mastodon & Public social discussion & Public posts from multiple instances, useful as a second social signal. \\
+GDELT GKG & Media coverage & News and media attention. It is not treated as public sentiment. \\
+ABS Monthly CPI & Official indicator & Monthly official price data for comparison, not causal modelling. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The collection taxonomy is explicit and versioned in \idx{data/cost\_of\_living\_keywords.csv}. It includes housing, groceries, energy, fuel, transport, eating out, healthcare, home goods, education, inflation, wages and debt. Terms were selected to cover common Australian cost categories, official CPI-aligned categories and locally meaningful signals such as major supermarket names, public transport terms and healthcare references. Source-specific collectors follow the public Bluesky, Mastodon and GDELT interfaces \cite{bluesky_api,mastodon_api,gdelt}, while official monthly indicators are obtained from ABS CPI documentation \cite{abs_api}.
+
+For social sources, a record must have a cost-of-living signal and Australian context. For GDELT, filtering is stricter because GKG records can contain metadata-heavy snippets. GDELT is analysed as media coverage, while Bluesky and Mastodon are grouped as social discussion.
+
+\section{Architecture}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{../evidence/architecture_diagram.png}
+\caption{System architecture}
+\label{fig:architecture}
+\end{figure}
+
+The public architecture has one API layer. FastAPI serves all analytics endpoints. Fission is used for scheduled ingestion and processing jobs only. This avoids the operational ambiguity of deploying the same analytics API as both a monolithic service and separate HTTP functions. Kubernetes, Fission and Elasticsearch provide orchestration, scheduled function execution and search storage respectively \cite{kubernetes_docs,fission_docs,elasticsearch_docs}.
+
+\begin{table}[H]
+\centering
+\caption{Runtime responsibilities}
+\begin{tabularx}{\linewidth}{p{0.24\linewidth}Y}
+\toprule
+Component & Responsibility \\
+\midrule
+Fission harvesters & Collect Bluesky, Mastodon, GDELT and ABS CPI data on schedules. \\
+Raw integrator & Normalise source-specific records into the unified raw schema. \\
+NLP processor & Claim pending records, clean text, classify topics, run sentiment and update processing state. \\
+Elasticsearch & Store raw streams, raw processing state, processed documents, aliases and official indicators. \\
+FastAPI & Serve REST endpoints for notebooks and dashboard clients. \\
+Jupyter notebooks & Consume the API and render exploratory charts. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Elasticsearch Data Model}
+
+\begin{table}[H]
+\centering
+\caption{Core indices and aliases}
+\begin{tabularx}{\linewidth}{p{0.42\linewidth}Y}
+\toprule
+Index or alias & Purpose \\
+\midrule
+\idx{cost\_living\_bluesky\_raw\_stream} & Bluesky source-specific raw records. \\
+\idx{cost\_living\_mastodon\_raw\_stream} & Mastodon source-specific raw records. \\
+\idx{cost\_living\_gdelt\_raw\_stream} & GDELT source-specific raw records. \\
+\idx{cost\_living\_raw\_posts} & Unified raw records and NLP processing state. \\
+\idx{cost\_living\_processed\_posts} & Processed topic and sentiment documents. \\
+\idx{cost\_living\_posts\_current} & Stable API read alias. \\
+\idx{cost\_living\_indicators} & ABS CPI observations. \\
+\idx{cost\_living\_monthly\_topic\_metrics} & Optional monthly rollup. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The NLP worker uses Elasticsearch as an inspectable work queue. Raw records start as \idx{pending}. A worker atomically claims a record by moving it to \idx{processing}, then writes a processed record and updates the raw status to \idx{processed}, \idx{discarded} or \idx{error}. Stale processing records can be retried. This is simpler than operating a separate message broker and is appropriate for the batch-style workload, although it is not a general-purpose queue. Sentiment scoring uses VADER because it is lightweight and interpretable for short social text \cite{vader}.
+
+\section{API Design}
+
+The API is read-only and exposes analytics resources under:
+
+\begin{center}
+\idx{/api/cost-living}
+\end{center}
+
+The application also accepts internal \idx{/api/...} paths for local tests. Common filters include \idx{source\_group}, \idx{platform}, \idx{topic}, \idx{start}, \idx{end}, \idx{period}, \idx{quality} and \idx{exclude\_quality\_flags}.
+
+\begin{table}[H]
+\centering
+\caption{Endpoint groups}
+\begin{tabularx}{\linewidth}{p{0.32\linewidth}Y}
+\toprule
+Group & Examples \\
+\midrule
+Health and pipeline & \idx{/health}, \idx{/pipeline/status} \\
+Overview and trends & \idx{/stats/overview}, \idx{/trends/documents}, \idx{/trends/categories} \\
+Topic analytics & \idx{/categories/counts}, \idx{/categories/sentiment}, \idx{/categories/share} \\
+Data quality & \idx{/data-quality/summary}, \idx{/data-quality/comparison} \\
+Media and platform views & \idx{/media/coverage}, \idx{/platforms/categories} \\
+Official comparison & \idx{/official/comparison} \\
+Diagnostics & \idx{/logs/errors} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+This style is analytics-resource oriented rather than RPC-oriented command naming. The API uses \idx{GET} because clients read aggregates and do not mutate platform state.
+
+\section{Implementation Quality}
+
+The codebase uses Pydantic settings, typed Python, explicit Elasticsearch mappings, a shared source registry and focused pytest coverage. The public version also removes duplicate Fission HTTP API functions so the deployment story is consistent.
+
+Important reliability choices include:
+
+\begin{itemize}
+    \item stable ids for idempotent writes;
+    \item separate raw and processed indices;
+    \item explicit processing state fields;
+    \item a stable processed-data alias for API reads;
+    \item short API response caching to reduce repeated aggregation load;
+    \item request logging in the FastAPI layer;
+    \item Kubernetes ConfigMaps and Secrets for environment-specific configuration.
+\end{itemize}
+
+\section{Validation and Results}
+
+The repository test suite covers harvester helpers, ABS CPI parsing, GDELT filtering, source registry logic, NLP processing, analytics store behaviour and API route wiring. The current public branch passes:
+
+\begin{center}
+\idx{43 pytest tests passing}
+\end{center}
+
+The original cloud run processed approximately 245k raw documents, 225k processed documents and 10,134 ABS CPI observations. These counts are a snapshot of the historical run, not a live service guarantee.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.82\linewidth]{../evidence/raw_document_outcomes.png}
+\caption{Raw document processing outcomes}
+\label{fig:raw-outcomes}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\linewidth]{../evidence/documents_over_time_by_platform.png}
+\caption{Documents over time by platform}
+\label{fig:documents-over-time}
+\end{figure}
+
+\subsection{Topic and Sentiment Patterns}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.86\linewidth]{../evidence/negative_ratio_by_category.png}
+\caption{Negative ratio by category}
+\label{fig:negative-ratio}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\linewidth]{../evidence/platform_category_sentiment_heatmap.png}
+\caption{Platform and category sentiment heatmap}
+\label{fig:sentiment-heatmap}
+\end{figure}
+
+The charts show that cost-of-living discussion is not uniform across categories or platforms. Social sources and GDELT should be interpreted separately: social sources are closer to personal expression, while GDELT measures media coverage.
+
+\subsection{Official CPI Comparison}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.82\linewidth]{../evidence/cpi_groceries_comparison.png}
+\caption{Groceries: official CPI and negative sentiment comparison}
+\label{fig:cpi-groceries}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\linewidth]{../evidence/cpi_sentiment_comparison_grid.png}
+\caption{Official CPI and sentiment comparison across selected topics}
+\label{fig:cpi-grid}
+\end{figure}
+
+The CPI comparison is descriptive. CPI measures official price movement, while social and media records measure attention and language. Alignment between the two is useful evidence for interpretation but does not imply causation.
+
+\section{Limitations}
+
+\begin{itemize}
+    \item Public social platforms are not representative population samples.
+    \item GDELT records can be noisy and metadata-heavy.
+    \item Keyword collection can miss relevant posts that use unexpected wording.
+    \item Topic classification assigns a primary category and can understate cross-topic discussion.
+    \item VADER is transparent and lightweight, but it can misread sarcasm and political language.
+    \item ABS CPI is monthly and delayed relative to online discussion.
+    \item The dataset does not contain reliable city-level fields.
+\end{itemize}
+
+\section{Conclusion}
+
+The platform demonstrates a maintainable cloud analytics pattern for public text and official indicator data. The strongest engineering choices are the separation of raw and processed data, explicit source registration, consistent index configuration, a single API serving path, and a testable FastAPI interface. The main analytical caution is that each source measures a different phenomenon: social discussion, media coverage and official price indicators should be compared carefully rather than merged into one sentiment claim.
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document}

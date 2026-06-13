@@ -1,0 +1,19 @@
+apiVersion: fission.io/v1
+kind: Environment
+metadata:
+  name: cost-living-platform-python39
+  namespace: default
+spec:
+  version: 3
+  poolsize: 1
+  runtime:
+    image: fission/python-env-3.9
+  builder:
+    image: fission/python-builder-3.9
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi

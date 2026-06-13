@@ -1,0 +1,83 @@
+{
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 1
+  },
+  "mappings": {
+    "properties": {
+      "id": {
+        "type": "keyword"
+      },
+      "source": {
+        "type": "keyword"
+      },
+      "dataflow": {
+        "type": "keyword"
+      },
+      "indicator": {
+        "type": "keyword"
+      },
+      "series_key": {
+        "type": "keyword"
+      },
+      "measure_code": {
+        "type": "keyword"
+      },
+      "measure": {
+        "type": "keyword"
+      },
+      "item_code": {
+        "type": "keyword"
+      },
+      "item_name": {
+        "type": "keyword"
+      },
+      "adjustment_code": {
+        "type": "keyword"
+      },
+      "adjustment": {
+        "type": "keyword"
+      },
+      "region_code": {
+        "type": "keyword"
+      },
+      "region": {
+        "type": "keyword"
+      },
+      "frequency_code": {
+        "type": "keyword"
+      },
+      "frequency": {
+        "type": "keyword"
+      },
+      "period": {
+        "type": "keyword"
+      },
+      "period_start": {
+        "type": "date"
+      },
+      "value": {
+        "type": "float"
+      },
+      "unit_code": {
+        "type": "keyword"
+      },
+      "unit": {
+        "type": "keyword"
+      },
+      "created_at": {
+        "type": "date"
+      },
+      "harvested_at": {
+        "type": "date"
+      },
+      "notes": {
+        "type": "text"
+      },
+      "raw_row": {
+        "type": "object",
+        "enabled": false
+      }
+    }
+  }
+}

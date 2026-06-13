@@ -1,0 +1,255 @@
+apiVersion: fission.io/v1
+kind: Function
+metadata:
+  name: cost-living-platform-bluesky-harvester
+  namespace: default
+spec:
+  environment:
+    name: cost-living-platform-python39
+    namespace: default
+  functionTimeout: 240
+  idletimeout: 120
+  package:
+    functionName: backend.fission_handlers.cost_living_platform_harvest_bluesky
+    packageref:
+      name: cost-living-platform-pipeline-pkg
+      namespace: default
+  InvokeStrategy:
+    StrategyType: execution
+    ExecutionStrategy:
+      ExecutorType: poolmgr
+      MinScale: 0
+      MaxScale: 1
+      TargetCPUPercent: 70
+      SpecializationTimeout: 120
+  requestsPerPod: 1
+  configmaps:
+    - name: cost-living-platform-config
+      namespace: default
+  secrets:
+    - name: cost-living-platform-secrets
+      namespace: default
+---
+apiVersion: fission.io/v1
+kind: Function
+metadata:
+  name: cost-living-platform-mastodon-au-harvester
+  namespace: default
+spec:
+  environment:
+    name: cost-living-platform-python39
+    namespace: default
+  functionTimeout: 240
+  idletimeout: 120
+  package:
+    functionName: backend.fission_handlers.cost_living_platform_harvest_mastodon_au
+    packageref:
+      name: cost-living-platform-pipeline-pkg
+      namespace: default
+  InvokeStrategy:
+    StrategyType: execution
+    ExecutionStrategy:
+      ExecutorType: poolmgr
+      MinScale: 0
+      MaxScale: 1
+      TargetCPUPercent: 70
+      SpecializationTimeout: 120
+  requestsPerPod: 1
+  configmaps:
+    - name: cost-living-platform-config
+      namespace: default
+  secrets:
+    - name: cost-living-platform-secrets
+      namespace: default
+---
+apiVersion: fission.io/v1
+kind: Function
+metadata:
+  name: cost-living-platform-mastodon-social-harvester
+  namespace: default
+spec:
+  environment:
+    name: cost-living-platform-python39
+    namespace: default
+  functionTimeout: 240
+  idletimeout: 120
+  package:
+    functionName: backend.fission_handlers.cost_living_platform_harvest_mastodon_social
+    packageref:
+      name: cost-living-platform-pipeline-pkg
+      namespace: default
+  InvokeStrategy:
+    StrategyType: execution
+    ExecutionStrategy:
+      ExecutorType: poolmgr
+      MinScale: 0
+      MaxScale: 1
+      TargetCPUPercent: 70
+      SpecializationTimeout: 120
+  requestsPerPod: 1
+  configmaps:
+    - name: cost-living-platform-config
+      namespace: default
+  secrets:
+    - name: cost-living-platform-secrets
+      namespace: default
+---
+apiVersion: fission.io/v1
+kind: Function
+metadata:
+  name: cost-living-platform-aus-social-harvester
+  namespace: default
+spec:
+  environment:
+    name: cost-living-platform-python39
+    namespace: default
+  functionTimeout: 240
+  idletimeout: 120
+  package:
+    functionName: backend.fission_handlers.cost_living_platform_harvest_aus_social
+    packageref:
+      name: cost-living-platform-pipeline-pkg
+      namespace: default
+  InvokeStrategy:
+    StrategyType: execution
+    ExecutionStrategy:
+      ExecutorType: poolmgr
+      MinScale: 0
+      MaxScale: 1
+      TargetCPUPercent: 70
+      SpecializationTimeout: 120
+  requestsPerPod: 1
+  configmaps:
+    - name: cost-living-platform-config
+      namespace: default
+  secrets:
+    - name: cost-living-platform-secrets
+      namespace: default
+---
+apiVersion: fission.io/v1
+kind: Function
+metadata:
+  name: cost-living-platform-gdelt-harvester
+  namespace: default
+spec:
+  environment:
+    name: cost-living-platform-python39
+    namespace: default
+  functionTimeout: 480
+  idletimeout: 120
+  package:
+    functionName: backend.fission_handlers.cost_living_platform_harvest_gdelt
+    packageref:
+      name: cost-living-platform-pipeline-pkg
+      namespace: default
+  InvokeStrategy:
+    StrategyType: execution
+    ExecutionStrategy:
+      ExecutorType: poolmgr
+      MinScale: 0
+      MaxScale: 1
+      TargetCPUPercent: 70
+      SpecializationTimeout: 120
+  requestsPerPod: 1
+  configmaps:
+    - name: cost-living-platform-config
+      namespace: default
+  secrets:
+    - name: cost-living-platform-secrets
+      namespace: default
+---
+apiVersion: fission.io/v1
+kind: Function
+metadata:
+  name: cost-living-platform-raw-integrator
+  namespace: default
+spec:
+  environment:
+    name: cost-living-platform-python39
+    namespace: default
+  functionTimeout: 600
+  idletimeout: 120
+  package:
+    functionName: backend.fission_handlers.cost_living_platform_sync_raw
+    packageref:
+      name: cost-living-platform-pipeline-pkg
+      namespace: default
+  InvokeStrategy:
+    StrategyType: execution
+    ExecutionStrategy:
+      ExecutorType: poolmgr
+      MinScale: 0
+      MaxScale: 1
+      TargetCPUPercent: 70
+      SpecializationTimeout: 120
+  requestsPerPod: 1
+  configmaps:
+    - name: cost-living-platform-config
+      namespace: default
+  secrets:
+    - name: cost-living-platform-secrets
+      namespace: default
+---
+apiVersion: fission.io/v1
+kind: Function
+metadata:
+  name: cost-living-platform-nlp-processor
+  namespace: default
+spec:
+  environment:
+    name: cost-living-platform-python39
+    namespace: default
+  functionTimeout: 3600
+  idletimeout: 120
+  package:
+    functionName: backend.fission_handlers.cost_living_platform_process_nlp
+    packageref:
+      name: cost-living-platform-pipeline-pkg
+      namespace: default
+  InvokeStrategy:
+    StrategyType: execution
+    ExecutionStrategy:
+      ExecutorType: poolmgr
+      MinScale: 0
+      MaxScale: 1
+      TargetCPUPercent: 70
+      SpecializationTimeout: 120
+  requestsPerPod: 1
+  configmaps:
+    - name: cost-living-platform-config
+      namespace: default
+  secrets:
+    - name: cost-living-platform-secrets
+      namespace: default
+---
+apiVersion: fission.io/v1
+kind: Function
+metadata:
+  name: cost-living-platform-official-indicators
+  namespace: default
+spec:
+  environment:
+    name: cost-living-platform-python39
+    namespace: default
+  functionTimeout: 180
+  idletimeout: 120
+  package:
+    functionName: backend.fission_handlers.cost_living_platform_harvest_cpi
+    packageref:
+      name: cost-living-platform-pipeline-pkg
+      namespace: default
+  InvokeStrategy:
+    StrategyType: execution
+    ExecutionStrategy:
+      ExecutorType: poolmgr
+      MinScale: 0
+      MaxScale: 1
+      TargetCPUPercent: 70
+      SpecializationTimeout: 120
+  requestsPerPod: 1
+  configmaps:
+    - name: cost-living-platform-config
+      namespace: default
+  secrets:
+    - name: cost-living-platform-secrets
+      namespace: default

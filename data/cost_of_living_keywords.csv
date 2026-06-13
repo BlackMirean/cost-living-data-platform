@@ -1,0 +1,8 @@
+topic,keywords,example_question
+housing,"rent;rent increase;rental crisis;landlord;mortgage;mortgage stress;interest rates;rba;housing affordability;housing supply;apartment;house prices","Are Australians talking more negatively about rent and mortgages?"
+groceries,"grocery;groceries;grocery prices;supermarket;coles;woolworths;aldi;food;food prices;price gouging;milk;bread","Do grocery complaints rise when CPI food categories rise?"
+energy,"electricity;electricity bill;electricity prices;energy;power bill;gas bill;energy bill;rebate;energy rebate;utility;utilities","Do social posts react to electricity CPI movements?"
+transport,"petrol;petrol prices;fuel;fuel prices;train;tram;bus;commute;transport;public transport;fare;fares","Is transport/fuel sentiment different from grocery sentiment?"
+inflation,"inflation;cpi;consumer price index;prices;price rise;price rises;cost of living;living costs","How does general inflation discussion compare with official CPI?"
+wages,"wage;wages;wage growth;salary;pay rise;income;real wages;minimum wage","Do wage discussions become more negative when CPI rises?"
+debt,"hecs;help debt;student debt;credit card;household debt;loan repayment;repayments","Do debt and repayment discussions show a distinct cost-of-living pressure?"
