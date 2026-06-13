@@ -21,6 +21,16 @@ def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def event_summary(event: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "event_id": event.get("event_id"),
+        "job_name": event.get("job_name"),
+        "status": event.get("status"),
+        "emitted_at": event.get("emitted_at"),
+        "duration_ms": event.get("duration_ms"),
+    }
+
+
 @dataclass
 class RuntimeLock:
     """A Redis lock acquired for one pipeline job invocation."""
@@ -172,7 +182,7 @@ def run_pipeline_job(
             "source": job_name,
             "skipped": True,
             "reason": "lock_held",
-            "runtime_queue": {"enabled": runtime.enabled, "event": event},
+            "runtime_queue": {"enabled": runtime.enabled, "event": event_summary(event)},
         }
 
     started = time.perf_counter()
@@ -189,5 +199,5 @@ def run_pipeline_job(
     elapsed_ms = (time.perf_counter() - started) * 1000
     event = runtime.emit_event(job_name, "succeeded", {"result": result}, duration_ms=elapsed_ms)
     if runtime.enabled and isinstance(result, dict):
-        result.setdefault("runtime_queue", {"enabled": True, "event": event})
+        result.setdefault("runtime_queue", {"enabled": True, "event": event_summary(event)})
     return result

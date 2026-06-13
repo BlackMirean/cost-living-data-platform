@@ -62,6 +62,8 @@ def test_pipeline_job_emits_events_and_releases_lock():
 
     assert result["ok"] is True
     assert result["runtime_queue"]["enabled"] is True
+    assert result["runtime_queue"]["event"]["status"] == "succeeded"
+    json.dumps(result)
     assert client.values == {}
     events = [json.loads(item) for item in client.lists["test_pipeline:events"]]
     assert [event["status"] for event in events] == ["started", "succeeded"]
