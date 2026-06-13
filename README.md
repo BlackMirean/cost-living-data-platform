@@ -148,13 +148,14 @@ cp .env.example .env
 Run tests:
 
 ```bash
-python -m pytest
+make test
+make public-check
 ```
 
 Run the API locally:
 
 ```bash
-uvicorn backend.api.main:app --reload --port 8000
+make api
 ```
 
 Swagger UI:
@@ -208,10 +209,16 @@ Current repository validation:
 Useful checks:
 
 ```bash
-python -m pytest
-python scripts/smoke_cost_living_platform_api.py --base-url http://127.0.0.1:8000 --prefix /api/cost-living
-python scripts/stress_cost_living_platform_api.py --base-url http://127.0.0.1:8000 --prefix /api/cost-living --rounds 10 --workers 3
+make ci
+make smoke
+make stress
 ```
+
+`make public-check` scans tracked files, notebooks and the rendered report for local credentials, stale private paths, uncleared notebook output and legacy project markers before a public release.
+
+## Contributing and Security
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development workflow and repository hygiene. See [SECURITY.md](SECURITY.md) for private security reporting and secret handling.
 
 ## Limitations
 

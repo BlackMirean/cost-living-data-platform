@@ -25,3 +25,6 @@ jobs:
 
       - name: Run tests
         run: pytest -q
+
+      - name: Verify public release hygiene
+        run: python scripts/verify_public_release.py

@@ -1,25 +1,42 @@
-.PHONY: install wait api test inspect-raw import-stream-dry rebuild-unified-raw sync-recent
+PYTHON ?= $(shell if [ -x .venv/bin/python ]; then echo .venv/bin/python; else echo python; fi)
+API_HOST ?= 0.0.0.0
+API_PORT ?= 8000
+API_BASE_URL ?= http://127.0.0.1:8000
+API_PREFIX ?= /api/cost-living
+
+.PHONY: install wait api test public-check ci smoke stress inspect-raw import-stream-dry rebuild-unified-raw sync-recent
 
 install:
-	. .venv/bin/activate && python -m pip install -r requirements.txt
+	$(PYTHON) -m pip install -r requirements.txt
 
 wait:
-	. .venv/bin/activate && python scripts/wait_for_elasticsearch.py
+	$(PYTHON) scripts/wait_for_elasticsearch.py
 
 api:
-	. .venv/bin/activate && uvicorn backend.api.main:app --reload --host 0.0.0.0 --port 8000
+	$(PYTHON) -m uvicorn backend.api.main:app --reload --host $(API_HOST) --port $(API_PORT)
 
 test:
-	. .venv/bin/activate && pytest
+	$(PYTHON) -m pytest -q
+
+public-check:
+	$(PYTHON) scripts/verify_public_release.py
+
+ci: test public-check
+
+smoke:
+	$(PYTHON) scripts/smoke_cost_living_platform_api.py --base-url $(API_BASE_URL) --prefix $(API_PREFIX)
+
+stress:
+	$(PYTHON) scripts/stress_cost_living_platform_api.py --base-url $(API_BASE_URL) --prefix $(API_PREFIX) --rounds 10 --workers 3
 
 inspect-raw:
-	. .venv/bin/activate && . scripts/load_cloud_env.sh && python scripts/inspect_es_indices.py --indices cost_living_raw_posts --sample-size 3
+	. scripts/load_cloud_env.sh && $(PYTHON) scripts/inspect_es_indices.py --indices cost_living_raw_posts --sample-size 3
 
 import-stream-dry:
-	. .venv/bin/activate && . scripts/load_cloud_env.sh && python scripts/import_raw_streams.py --limit-per-index 2 --sample-size 2
+	. scripts/load_cloud_env.sh && $(PYTHON) scripts/import_raw_streams.py --limit-per-index 2 --sample-size 2
 
 rebuild-unified-raw:
-	. .venv/bin/activate && . scripts/load_cloud_env.sh && python scripts/import_raw_streams.py --write --reset-target --limit-per-index 0 --scan-size 5000 --bulk-size 2500
+	. scripts/load_cloud_env.sh && $(PYTHON) scripts/import_raw_streams.py --write --reset-target --limit-per-index 0 --scan-size 5000 --bulk-size 2500
 
 sync-recent:
-	. .venv/bin/activate && . scripts/load_cloud_env.sh && python scripts/import_raw_streams.py --write --lookback-hours 2 --limit-per-index 0 --scan-size 1000 --bulk-size 1000
+	. scripts/load_cloud_env.sh && $(PYTHON) scripts/import_raw_streams.py --write --lookback-hours 2 --limit-per-index 0 --scan-size 1000 --bulk-size 1000
