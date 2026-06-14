@@ -32,7 +32,6 @@ BLOCKED_TEXT_MARKERS = [
     _term("l", "lm"),
     _term("large", " ", "language"),
     _term("xiao", "jibao"),
-    _term("black", "mirean"),
     _term("university", " ", "of", " ", "melbourne"),
     _term("m", "rc"),
     chr(0x4E2D) + chr(0x6587),

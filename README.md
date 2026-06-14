@@ -9,9 +9,11 @@ The system collects public data from Bluesky, Mastodon and GDELT, normalises raw
 <table>
   <tr>
     <td align="center">
-      <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" width="80px;" alt="Contributor 1" />
-      <br />
-      <sub><b>Contributor 1</b></sub>
+      <a href="https://github.com/BlackMirean">
+        <img src="https://github.com/BlackMirean.png?size=100" width="80px;" alt="Tzz" />
+        <br />
+        <sub><b>Tzz</b></sub>
+      </a>
       <br />
       <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" width="18px;" alt="GitHub profile" />
     </td>
