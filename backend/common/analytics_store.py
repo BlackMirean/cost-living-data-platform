@@ -1601,7 +1601,7 @@ def error_logs(size: int = 50) -> dict[str, Any]:
         rows.append(
             {
                 "timestamp": source.get("analysis_processed_at") or source.get("harvested_at"),
-                "function_name": "cost-living-platform-nlp-processor",
+                "function_name": "cost-living-platform-nlp-worker",
                 "stage": "processing",
                 "status": source.get("analysis_status"),
                 "error_type": "processing_error",

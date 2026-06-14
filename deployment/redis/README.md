@@ -7,7 +7,8 @@ Redis is used for runtime concerns that should not be stored in Elasticsearch:
 - distributed locks for scheduled jobs;
 - recent pipeline lifecycle events;
 - API diagnostics through `/api/cost-living/pipeline/runtime` and `/api/cost-living/pipeline/events`;
-- shared short-lived API response caching for repeated analytics reads, exposed through `/api/cost-living/cache/status`.
+- shared short-lived API response caching for repeated analytics reads, exposed through `/api/cost-living/cache/status`;
+- the NLP work queue and dead-letter queue exposed through `/api/cost-living/pipeline/queues`.
 
 Elasticsearch remains the source of truth for raw documents, processed documents, status fields and analytics.
 

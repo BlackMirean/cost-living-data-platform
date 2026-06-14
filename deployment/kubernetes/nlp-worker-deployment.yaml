@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cost-living-platform-nlp-worker
+  namespace: cost-living
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app: cost-living-platform-nlp-worker
+  template:
+    metadata:
+      labels:
+        app: cost-living-platform-nlp-worker
+        component: nlp-worker
+        project: cost-living
+    spec:
+      containers:
+        - name: nlp-worker
+          image: ghcr.io/your-username/cost-living-platform-api:latest
+          imagePullPolicy: IfNotPresent
+          command: ["python", "-m", "backend.processing.queue_worker"]
+          envFrom:
+            - configMapRef:
+                name: cost-living-platform-api-config
+            - secretRef:
+                name: cost-living-platform-api-secrets
+          resources:
+            requests:
+              cpu: 100m
+              memory: 384Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: cost-living-platform-nlp-worker
+  namespace: cost-living
+spec:
+  scaleTargetRef:
+    name: cost-living-platform-nlp-worker
+  pollingInterval: 15
+  cooldownPeriod: 60
+  minReplicaCount: 0
+  maxReplicaCount: 3
+  triggers:
+    - type: redis
+      metadata:
+        address: redis.redis.svc.cluster.local:6379
+        databaseIndex: "0"
+        listName: cost_living_pipeline:queue:nlp
+        listLength: "1"

@@ -11,7 +11,7 @@ The public architecture uses Fission for the data pipeline only. The analytics A
 | `platform-environment.yaml` | Dedicated Python environment |
 | `platform-configmap.yaml` | Pipeline configuration and index names |
 | `platform-secrets.example.yaml` | Secret template without real credentials |
-| `platform-pipeline-functions.yaml` | Harvesters, raw integrator, NLP processor and CPI harvester |
+| `platform-pipeline-functions.yaml` | Harvesters, raw integrator and CPI harvester |
 | `platform-pipeline-timers.yaml` | Scheduled triggers |
 
 ## Functions
@@ -24,7 +24,6 @@ The public architecture uses Fission for the data pipeline only. The analytics A
 | `cost-living-platform-aus-social-harvester` | timer | Harvest Aus Social records |
 | `cost-living-platform-gdelt-harvester` | timer | Harvest incremental GDELT GKG archive records |
 | `cost-living-platform-raw-integrator` | timer | Integrate platform raw streams |
-| `cost-living-platform-nlp-processor` | timer | Process pending raw documents |
 | `cost-living-platform-official-indicators` | timer | Harvest ABS CPI observations |
 
 ## Indices
@@ -34,7 +33,8 @@ cost_living_bluesky_raw_stream
 cost_living_mastodon_raw_stream
 cost_living_gdelt_raw_stream
 cost_living_raw_posts
-cost_living_processed_posts
+cost_living_processed_posts_write
+cost_living_processed_posts-000001
 cost_living_posts_current
 cost_living_indicators
 cost_living_monthly_topic_metrics
@@ -50,12 +50,13 @@ cost_living_monthly_topic_metrics
 6. Apply `platform-pipeline-functions.yaml`.
 7. Test functions manually.
 8. Apply `platform-pipeline-timers.yaml`.
+9. Apply `deployment/kubernetes/nlp-worker-deployment.yaml` so KEDA can scale NLP processing from the Redis queue.
 
 Detailed commands are in [package_commands.md](package_commands.md).
 
 ## Optional Redis Runtime Services
 
-The Fission handlers use Redis when `REDIS_ENABLED=true`. Redis provides job locks and recent lifecycle events; it does not replace Elasticsearch document storage or NLP processing state.
+The Fission handlers use Redis when `REDIS_ENABLED=true`. Redis provides job locks and recent lifecycle events; the raw integrator also queues NLP work for the KEDA worker. Redis does not replace Elasticsearch document storage or NLP processing state.
 
 Deploy Redis first:
 
@@ -89,5 +90,5 @@ GDELT_GKG_BACKFILL_CHECKPOINT_PATH: "data/backfill_state/gdelt_gkg_backfill.json
 
 - Do not commit real credentials.
 - Keep API serving outside Fission to avoid duplicate API deployments.
-- Keep timer schedules staggered so harvesters, integration and NLP processing do not all start at once.
+- Keep timer schedules staggered so harvesters and raw integration do not all start at once.
 - Source plugins live in `backend/platforms/plugins.py` and are exposed through `backend/common/source_registry.py`.

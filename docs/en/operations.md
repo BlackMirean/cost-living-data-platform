@@ -1,6 +1,6 @@
 # Operations and Testing
 
-This document records how to run and validate the public version of the cost-of-living data platform.
+Runbook for operating and validating the public cost-of-living data platform.
 
 ## Local Setup
 
@@ -132,7 +132,7 @@ kubectl apply -f deployment/kubernetes/api-hpa.yaml
 
 ## Fission Pipeline
 
-Fission is used for scheduled ingestion and processing jobs only.
+Fission is used for scheduled ingestion, raw integration and CPI jobs only. NLP processing is queue-based and runs in Kubernetes workers.
 
 Deployment order:
 
@@ -155,7 +155,55 @@ Deploy Redis before enabling runtime coordination:
 kubectl apply -f deployment/redis/redis.yaml
 ```
 
-The provided Kubernetes and Fission ConfigMaps enable Redis. Redis is used for scheduled job locks, lifecycle events and shared API response caching; Elasticsearch still stores document state.
+The provided Kubernetes and Fission ConfigMaps enable Redis. Redis is used for scheduled job locks, lifecycle events, shared API response caching and the NLP work queue; Elasticsearch still stores document state.
+
+## KEDA NLP Worker
+
+The raw integrator pushes work items to `cost_living_pipeline:queue:nlp` after it writes unified raw documents. KEDA watches this Redis list and scales `cost-living-platform-nlp-worker` from zero. Failed messages retry up to `NLP_QUEUE_MAX_ATTEMPTS`; exhausted or malformed messages move to `cost_living_pipeline:queue:nlp:dead-letter`.
+
+```bash
+kubectl apply -f deployment/kubernetes/nlp-worker-deployment.yaml
+kubectl -n cost-living get scaledobject cost-living-platform-nlp-worker
+kubectl -n cost-living get pods -l app=cost-living-platform-nlp-worker
+```
+
+Operational checks:
+
+```text
+/api/cost-living/pipeline/queues
+/api/cost-living/pipeline/events?limit=20
+```
+
+The queue status response includes active queue depth and dead-letter depth. A non-zero dead-letter depth should be investigated before treating a run as complete.
+
+## Elasticsearch Lifecycle
+
+Processed documents use an ILM-managed write alias:
+
+```text
+cost_living_processed_posts_write -> cost_living_processed_posts-000001
+cost_living_posts_current -> processed backing indices
+```
+
+Apply or repair the lifecycle policy, template and aliases:
+
+```bash
+python scripts/apply_elasticsearch_lifecycle.py
+```
+
+The script migrates an existing concrete `cost_living_processed_posts` index into the first backing index before creating aliases.
+
+## Observability and Limits
+
+The API exposes Prometheus metrics, request-id propagation, rate limit status and cache status:
+
+```text
+/api/cost-living/metrics
+/api/cost-living/rate-limit/status
+/api/cost-living/cache/status
+```
+
+Every response includes `X-Request-ID`. Clients can provide their own `X-Request-ID`; otherwise the API generates one and includes it in structured request logs.
 
 ## GDELT Archive Ingestion
 
@@ -228,12 +276,12 @@ For a Kubernetes port-forward, use `API_BASE_URL=http://127.0.0.1:8010`.
 | API returns 422 | Invalid query parameter | Response `detail` field |
 | API returns 500 | Elasticsearch query or mapping error | API logs and `/health` |
 | No new raw documents | Upstream API limit or no matching records | Harvester logs and raw stream indices |
-| NLP backlog grows | Worker not running or stale processing locks | Raw index `analysis_status` distribution |
+| NLP backlog grows | KEDA worker not running or stale processing locks | `/pipeline/queues`, worker pods, raw index `analysis_status` distribution |
 
 ## Validation Snapshot
 
-The repository-level test suite currently covers harvesters, GDELT archive processing and backfill resume behaviour, NLP processing, analytics queries, source plugins, Redis runtime queue logic, API cache behaviour and API route wiring.
+The repository-level test suite currently covers harvesters, GDELT archive processing and backfill resume behaviour, NLP processing, analytics queries, source plugins, Redis runtime queue logic, API cache behaviour, rate limiting, work queues, Elasticsearch lifecycle templates and API route wiring.
 
 ```text
-49 pytest tests passing
+57 pytest tests passing
 ```

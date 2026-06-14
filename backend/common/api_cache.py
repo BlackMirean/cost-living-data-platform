@@ -10,6 +10,7 @@ from collections.abc import Callable
 from typing import Any
 
 from backend.common.config import settings
+from backend.common.observability import record_cache_lookup
 
 
 logger = logging.getLogger(__name__)
@@ -110,11 +111,13 @@ class ApiResponseCache:
         value = self._redis_get(cache_key)
         if value is not None:
             self._hits += 1
+            record_cache_lookup("hit", "redis")
             return value
 
         value = self._memory_get(cache_key, now)
         if value is not None:
             self._hits += 1
+            record_cache_lookup("hit", "memory")
             return value
 
         self._misses += 1
@@ -122,6 +125,7 @@ class ApiResponseCache:
         self._memory[cache_key] = (now, value)
         self._redis_set(cache_key, value)
         self._sets += 1
+        record_cache_lookup("miss", "redis" if self.redis_available else "memory")
         return value
 
     def status(self) -> dict[str, Any]:

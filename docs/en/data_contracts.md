@@ -1,6 +1,6 @@
 # Data Contracts
 
-This document defines the Elasticsearch fields used by the optimized `cost-living-platform-*` stack. The Jupyter frontend does not query Elasticsearch directly. It calls the REST API, and the API maps these fields into chart-ready JSON.
+Elasticsearch field contracts for the optimized `cost-living-platform-*` stack. The Jupyter frontend does not query Elasticsearch directly. It calls the REST API, and the API maps these fields into chart-ready JSON.
 
 ## 1. Platform Raw Streams
 
@@ -36,7 +36,7 @@ The source registry in `backend/common/source_registry.py` exposes plugin metada
 | `mastodon` | `social` | `cost_living_mastodon_raw_stream` |
 | `gdelt` | `media` | `cost_living_gdelt_raw_stream` |
 
-This is a Level 1 extension point. Source metadata lives in one place and only covers platforms currently deployed by this project.
+Platform source metadata is the primary extension point. It lives in one place and only covers platforms currently deployed by this project.
 
 ## 2. Unified Raw Data
 
@@ -85,7 +85,7 @@ The same upstream record writes to the same `_id`. Re-running a harvester or int
 Index:
 
 ```text
-cost_living_processed_posts
+cost_living_processed_posts_write
 ```
 
 Stable read alias:
@@ -94,7 +94,7 @@ Stable read alias:
 cost_living_posts_current
 ```
 
-The API reads through the alias. This lets the processed index be rebuilt without changing notebook code.
+The NLP worker writes through the rollover alias. Elasticsearch ILM manages backing indices named `cost_living_processed_posts-*`. The API reads through `cost_living_posts_current`, which keeps notebook code stable while backing indices roll over.
 
 | Field | Type | Notes |
 | --- | --- | --- |
@@ -214,7 +214,7 @@ Index:
 cost_living_monthly_topic_metrics
 ```
 
-This is an optional acceleration layer. It does not replace the processed index.
+The monthly rollup is an optional acceleration layer. It does not replace the processed index.
 
 | Field | Type | Notes |
 | --- | --- | --- |

@@ -13,9 +13,10 @@ Fission handles scheduled ingestion and processing. Kubernetes serves the API.
 | `secrets.example.yaml` | Elasticsearch credential template |
 | `api-deployment.yaml` | FastAPI Deployment |
 | `api-service.yaml` | API Service |
-| `api-hpa.yaml` | Optional horizontal pod autoscaler |
+| `api-hpa.yaml` | API horizontal pod autoscaler |
+| `nlp-worker-deployment.yaml` | KEDA-scaled NLP worker deployment and ScaledObject |
 
-The API can also report Redis runtime queue status, recent pipeline events and API cache status when Redis is enabled through `REDIS_ENABLED=true`.
+The API reports Redis runtime status, recent pipeline events, NLP queue depth, API cache status and rate-limit status when Redis is enabled through `REDIS_ENABLED=true`.
 
 ## Image
 
@@ -39,6 +40,7 @@ kubectl apply -f deployment/kubernetes/secrets.example.yaml
 kubectl apply -f deployment/kubernetes/configmap.yaml
 kubectl apply -f deployment/kubernetes/api-deployment.yaml
 kubectl apply -f deployment/kubernetes/api-service.yaml
+kubectl apply -f deployment/kubernetes/nlp-worker-deployment.yaml
 ```
 
 Optional Redis runtime services:
@@ -47,7 +49,7 @@ Optional Redis runtime services:
 kubectl apply -f deployment/redis/redis.yaml
 ```
 
-The provided API and Fission ConfigMaps enable Redis. Set `REDIS_ENABLED=false` only when deploying without Redis.
+The provided API and Fission ConfigMaps enable Redis. Set `REDIS_ENABLED=false` only when deploying without Redis and without the KEDA NLP worker.
 
 Optional HPA:
 
@@ -64,6 +66,8 @@ kubectl -n cost-living port-forward svc/cost-living-platform-api 8010:80
 ```text
 http://127.0.0.1:8010/api/cost-living/health
 http://127.0.0.1:8010/api/cost-living/pipeline/events?limit=20
+http://127.0.0.1:8010/api/cost-living/pipeline/queues
+http://127.0.0.1:8010/api/cost-living/metrics
 http://127.0.0.1:8010/docs
 ```
 

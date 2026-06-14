@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from backend.harvesters.abs_cpi_harvester import harvest_abs_cpi
 from backend.harvesters.unified_raw_sync import sync_platform_raw_posts
-from backend.processing.nlp_worker import process_batch as process_nlp_batch
 from backend.common.runtime_queue import run_pipeline_job
 
 
@@ -56,14 +55,6 @@ def cost_living_platform_sync_raw() -> dict:
     return run_pipeline_job(
         job_name,
         lambda: {"source": "cost_living_platform_raw_integrator", **sync_platform_raw_posts()},
-    )
-
-
-def cost_living_platform_process_nlp() -> dict:
-    job_name = "cost-living-platform-nlp-processor"
-    return run_pipeline_job(
-        job_name,
-        lambda: {"source": "cost_living_platform_nlp_processor", **process_nlp_batch()},
     )
 
 

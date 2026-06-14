@@ -20,7 +20,7 @@ export ELASTICSEARCH_VERIFY_CERTS="${ELASTICSEARCH_VERIFY_CERTS:-false}"
 
 export RAW_POSTS_INDEX="${RAW_POSTS_INDEX:-cost_living_raw_posts}"
 export POSTS_INDEX="${POSTS_INDEX:-cost_living_posts_current}"
-export PROCESSED_POSTS_WRITE_INDEX="${PROCESSED_POSTS_WRITE_INDEX:-cost_living_processed_posts}"
+export PROCESSED_POSTS_WRITE_INDEX="${PROCESSED_POSTS_WRITE_INDEX:-cost_living_processed_posts_write}"
 export POSTS_CURRENT_ALIAS="${POSTS_CURRENT_ALIAS:-cost_living_posts_current}"
 export INDICATORS_INDEX="${INDICATORS_INDEX:-cost_living_indicators}"
 export MONTHLY_METRICS_INDEX="${MONTHLY_METRICS_INDEX:-cost_living_monthly_topic_metrics}"

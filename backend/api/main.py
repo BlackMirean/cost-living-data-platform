@@ -4,49 +4,133 @@ from __future__ import annotations
 
 import time
 import logging
+import json
 from collections.abc import Callable
 from typing import Any
 
 from fastapi import FastAPI, Query
+from fastapi.responses import JSONResponse
 
 from backend.common import analytics_store, source_registry
 from backend.common.api_cache import ApiResponseCache
 from backend.common.config import settings
+from backend.common.observability import (
+    initialize_observability,
+    metrics_response,
+    record_rate_limit_block,
+    record_request,
+    request_span,
+    track_in_flight,
+)
+from backend.common.rate_limiter import ApiRateLimiter
+from backend.common.request_context import (
+    new_request_id,
+    reset_request_id,
+    set_request_id,
+)
 from backend.common.runtime_queue import runtime_queue_events, runtime_queue_status
+from backend.common.work_queue import work_queue_status
 
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
 logger = logging.getLogger(__name__)
 app = FastAPI(title=settings.api_title)
 _CACHE = ApiResponseCache()
+_RATE_LIMITER = ApiRateLimiter()
 PLATFORM_PREFIX = "/api/cost-living"
+RATE_LIMIT_EXCLUDED_PATHS = {"/", "/metrics", "/api/metrics", "/api/health"}
+initialize_observability()
+
+
+def client_ip(request: Any) -> str:
+    forwarded_for = request.headers.get("x-forwarded-for")
+    if forwarded_for:
+        return forwarded_for.split(",", 1)[0].strip()
+    return getattr(request.client, "host", None) or "unknown"
+
+
+def request_id_from_headers(request: Any) -> str:
+    raw_value = request.headers.get("x-request-id", "").strip()
+    if raw_value and len(raw_value) <= 128:
+        return raw_value
+    return new_request_id()
 
 
 @app.middleware("http")
 async def support_platform_prefix(request: Any, call_next: Callable[[Any], Any]) -> Any:
-    """Support the public API prefix and log request outcomes."""
+    """Support the public API prefix, tracing, rate limiting and request logs."""
 
-    started_at = time.perf_counter()
+    request_id = request_id_from_headers(request)
+    request_token = set_request_id(request_id)
     path = request.scope.get("path", "")
     original_path = path
     if path == PLATFORM_PREFIX:
         request.scope["path"] = "/api/health"
     elif path.startswith(f"{PLATFORM_PREFIX}/"):
         request.scope["path"] = "/api" + path[len(PLATFORM_PREFIX) :]
+    route_path = request.scope.get("path", original_path)
+    method = request.method
+    finish_in_flight = track_in_flight(method, route_path)
+    span_attrs = {
+        "http.request.method": method,
+        "url.path": original_path,
+        "http.route": route_path,
+        "client.address": client_ip(request),
+        "request.id": request_id,
+    }
+    status_code = 500
     try:
-        response = await call_next(request)
+        with request_span("cost_living.api_request", span_attrs) as span:
+            if route_path not in RATE_LIMIT_EXCLUDED_PATHS:
+                decision = _RATE_LIMITER.check(client_id=client_ip(request), route_key=route_path)
+                if not decision.allowed:
+                    status_code = 429
+                    record_rate_limit_block(method, route_path, decision.backend)
+                    response = JSONResponse(
+                        status_code=429,
+                        content={
+                            "detail": "rate limit exceeded",
+                            "request_id": request_id,
+                            "retry_after_seconds": decision.reset_seconds,
+                        },
+                    )
+                    response.headers["Retry-After"] = str(decision.reset_seconds)
+                else:
+                    response = await call_next(request)
+                response.headers["X-RateLimit-Limit"] = str(decision.limit)
+                response.headers["X-RateLimit-Remaining"] = str(decision.remaining)
+                response.headers["X-RateLimit-Reset"] = str(decision.reset_seconds)
+            else:
+                response = await call_next(request)
+            status_code = getattr(response, "status_code", status_code)
+            if span is not None:
+                span.set_attribute("http.response.status_code", status_code)
+            return response
     except Exception:
-        logger.exception("api_request_failed path=%s", original_path)
+        logger.exception("api_request_failed request_id=%s path=%s", request_id, original_path)
         raise
-    elapsed_ms = (time.perf_counter() - started_at) * 1000
-    logger.info(
-        "api_request method=%s path=%s status=%s duration_ms=%.2f",
-        request.method,
-        original_path,
-        getattr(response, "status_code", "unknown"),
-        elapsed_ms,
-    )
-    return response
+    finally:
+        duration_seconds = finish_in_flight()
+        record_request(method, route_path, status_code, duration_seconds)
+        logger.info(
+            json.dumps(
+                {
+                    "event": "api_request",
+                    "request_id": request_id,
+                    "method": method,
+                    "path": original_path,
+                    "route": route_path,
+                    "status": status_code,
+                    "duration_ms": round(duration_seconds * 1000, 2),
+                },
+                sort_keys=True,
+            )
+        )
+        try:
+            response.headers["X-Request-ID"] = request_id
+        except Exception:
+            pass
+        reset_request_id(request_token)
 
 
 def cached(key: tuple[Any, ...], producer: Callable[[], dict[str, Any]]) -> dict[str, Any]:
@@ -96,9 +180,25 @@ def pipeline_events(limit: int = Query(default=50, ge=1, le=500)) -> dict[str, A
     return runtime_queue_events(limit=limit)
 
 
+@app.get("/api/pipeline/queues")
+def pipeline_queues() -> dict[str, Any]:
+    return work_queue_status()
+
+
 @app.get("/api/cache/status")
 def cache_status() -> dict[str, Any]:
     return _CACHE.status()
+
+
+@app.get("/api/rate-limit/status")
+def rate_limit_status() -> dict[str, Any]:
+    return _RATE_LIMITER.status()
+
+
+@app.get("/metrics", include_in_schema=False)
+@app.get("/api/metrics")
+def metrics() -> Any:
+    return metrics_response()
 
 
 @app.get("/api/platforms/plugins")

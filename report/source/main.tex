@@ -46,7 +46,7 @@
 \maketitle
 
 \begin{abstract}
-This report describes a cloud data platform for monitoring Australian cost-of-living pressure through public social discussion, media coverage and official CPI indicators. The system collects public records from Bluesky, Mastodon and GDELT GKG archive files, stores source-specific raw streams in Elasticsearch, normalises them into a unified raw index, processes text with topic classification and VADER sentiment, and serves analytics through a FastAPI REST API. ABS Monthly CPI observations are used as an official comparison signal rather than a causal label. The public version presents a single API serving path and uses Fission only for scheduled pipeline jobs, avoiding duplicate API deployments.
+The cloud data platform monitors Australian cost-of-living pressure through public social discussion, media coverage and official CPI indicators. It collects public records from Bluesky, Mastodon and GDELT GKG archive files, stores source-specific raw streams in Elasticsearch, normalises them into a unified raw index, processes text with topic classification and VADER sentiment, and serves analytics through a FastAPI REST API. ABS Monthly CPI observations provide an official comparison signal rather than a causal label. The public architecture presents a single API serving path and uses Fission only for scheduled pipeline jobs, avoiding duplicate API deployments.
 \end{abstract}
 
 \tableofcontents
@@ -99,7 +99,7 @@ For social sources, a record must have a cost-of-living signal and Australian co
 \label{fig:architecture}
 \end{figure}
 
-The public architecture has one API layer. FastAPI serves all analytics endpoints. Fission is used for scheduled ingestion and processing jobs only. This avoids the operational ambiguity of deploying the same analytics API as both a monolithic service and separate HTTP functions. Kubernetes, Fission and Elasticsearch provide orchestration, scheduled function execution and search storage respectively \cite{kubernetes_docs,fission_docs,elasticsearch_docs}.
+The public architecture has one API layer. FastAPI serves all analytics endpoints. Fission is used for scheduled ingestion, raw integration and CPI jobs only. NLP processing runs as Kubernetes workers scaled by KEDA from a Redis queue. This avoids the operational ambiguity of deploying the same analytics API as both a monolithic service and separate HTTP functions. Kubernetes, Fission and Elasticsearch provide orchestration, scheduled function execution and search storage respectively \cite{kubernetes_docs,fission_docs,elasticsearch_docs}.
 
 \begin{table}[H]
 \centering
@@ -109,10 +109,10 @@ The public architecture has one API layer. FastAPI serves all analytics endpoint
 Component & Responsibility \\
 \midrule
 Fission harvesters & Collect Bluesky, Mastodon, GDELT and ABS CPI data on schedules. \\
-Raw integrator & Normalise source-specific records into the unified raw schema. \\
-NLP processor & Claim pending records, clean text, classify topics, run sentiment and update processing state. \\
-Elasticsearch & Store raw streams, raw processing state, processed documents, aliases and official indicators. \\
-FastAPI & Serve REST endpoints for notebooks and dashboard clients. \\
+Raw integrator & Normalise source-specific records into the unified raw schema and enqueue NLP work. \\
+KEDA NLP worker & Scale from the Redis queue, claim pending records, clean text, classify topics and run sentiment. \\
+Elasticsearch & Store raw streams, raw processing state, ILM-managed processed documents, aliases and official indicators. \\
+FastAPI & Serve REST endpoints, Prometheus metrics, rate limits and request-id traced logs. \\
 Jupyter notebooks & Consume the API and render exploratory charts. \\
 \bottomrule
 \end{tabularx}
@@ -131,7 +131,8 @@ Index or alias & Purpose \\
 \idx{cost\_living\_mastodon\_raw\_stream} & Mastodon source-specific raw records. \\
 \idx{cost\_living\_gdelt\_raw\_stream} & GDELT source-specific raw records. \\
 \idx{cost\_living\_raw\_posts} & Unified raw records and NLP processing state. \\
-\idx{cost\_living\_processed\_posts} & Processed topic and sentiment documents. \\
+\idx{cost\_living\_processed\_posts\_write} & Processed write alias managed by ILM rollover. \\
+\idx{cost\_living\_processed\_posts-*} & Processed topic and sentiment backing indices. \\
 \idx{cost\_living\_posts\_current} & Stable API read alias. \\
 \idx{cost\_living\_indicators} & ABS CPI observations. \\
 \idx{cost\_living\_monthly\_topic\_metrics} & Optional monthly rollup. \\
@@ -139,7 +140,7 @@ Index or alias & Purpose \\
 \end{tabularx}
 \end{table}
 
-The NLP worker uses Elasticsearch as an inspectable work queue. Raw records start as \idx{pending}. A worker atomically claims a record by moving it to \idx{processing}, then writes a processed record and updates the raw status to \idx{processed}, \idx{discarded} or \idx{error}. Stale processing records can be retried. This is simpler than operating a separate message broker and is appropriate for the batch-style workload, although it is not a general-purpose queue. Sentiment scoring uses VADER because it is lightweight and interpretable for short social text \cite{vader}.
+The raw integrator pushes lightweight NLP work items into Redis after it writes new unified raw records. KEDA watches this Redis list and scales the NLP worker deployment from zero. Worker queue messages have a bounded retry budget, and exhausted or malformed messages are isolated in a Redis dead-letter queue for inspection. The worker still uses Elasticsearch status fields for safe claiming: raw records start as \idx{pending}, a worker atomically moves a bounded set to \idx{processing}, then writes processed records and updates raw status to \idx{processed}, \idx{discarded} or \idx{error}. Stale processing records can be retried. Sentiment scoring uses VADER because it is lightweight and interpretable for short social text \cite{vader}.
 
 \section{API Design}
 
@@ -149,7 +150,7 @@ The API is read-only and exposes analytics resources under:
 \idx{/api/cost-living}
 \end{center}
 
-The application also accepts internal \idx{/api/...} paths for local tests. Common filters include \idx{source\_group}, \idx{platform}, \idx{topic}, \idx{start}, \idx{end}, \idx{period}, \idx{quality} and \idx{exclude\_quality\_flags}.
+The application also accepts internal \idx{/api/...} paths for local tests. Common filters include source group, platform, topic, date range, period, quality and quality-flag exclusion.
 
 \begin{table}[H]
 \centering
@@ -158,13 +159,13 @@ The application also accepts internal \idx{/api/...} paths for local tests. Comm
 \toprule
 Group & Examples \\
 \midrule
-Health and pipeline & \idx{/health}, \idx{/pipeline/status} \\
+Health and pipeline & \idx{/health}, \idx{/pipeline/status}, \idx{/pipeline/queues} \\
 Overview and trends & \idx{/stats/overview}, \idx{/trends/documents}, \idx{/trends/categories} \\
 Topic analytics & \idx{/categories/counts}, \idx{/categories/sentiment}, \idx{/categories/share} \\
 Data quality & \idx{/data-quality/summary}, \idx{/data-quality/comparison} \\
 Media and platform views & \idx{/media/coverage}, \idx{/platforms/categories} \\
 Official comparison & \idx{/official/comparison} \\
-Diagnostics & \idx{/logs/errors} \\
+Diagnostics & \idx{/logs/errors}, \idx{/metrics}, \idx{/rate-limit/status} \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -181,19 +182,20 @@ Important reliability choices include:
     \item stable ids for idempotent writes;
     \item separate raw and processed indices;
     \item explicit processing state fields;
-    \item a stable processed-data alias for API reads;
+    \item ILM-managed processed backing indices with separate write and read aliases;
     \item Redis-backed short API response caching with an in-memory fallback to reduce repeated aggregation load;
-    \item request logging in the FastAPI layer;
-    \item Redis-backed job locks, lifecycle events and run identifiers for scheduled jobs;
+    \item Prometheus metrics for API request count, latency, cache and rate-limit behaviour;
+    \item request-id propagation and structured request logging in the FastAPI layer;
+    \item Redis-backed job locks, lifecycle events, run identifiers and queue-backed KEDA worker scaling;
     \item Kubernetes ConfigMaps and Secrets for environment-specific configuration.
 \end{itemize}
 
 \section{Validation and Results}
 
-The repository test suite covers harvester helpers, ABS CPI parsing, GDELT archive processing, GDELT backfill resume behaviour, source registry logic, NLP processing, Redis runtime queue behaviour, API cache behaviour, analytics store behaviour and API route wiring. The current public branch passes:
+The repository test suite covers harvester helpers, ABS CPI parsing, GDELT archive processing, GDELT backfill resume behaviour, source registry logic, NLP processing, Redis runtime queue behaviour, API cache behaviour, rate limiting, queue workers, Elasticsearch lifecycle templates, analytics store behaviour and API route wiring. The current public branch passes:
 
 \begin{center}
-\idx{49 pytest tests passing}
+\idx{57 pytest tests passing}
 \end{center}
 
 The original cloud run processed approximately 245k raw documents, 225k processed documents and 10,134 ABS CPI observations. These counts are a snapshot of the historical run, not a live service guarantee.
@@ -262,7 +264,7 @@ The CPI comparison is descriptive. CPI measures official price movement, while s
 
 \section{Conclusion}
 
-The platform demonstrates a maintainable cloud analytics pattern for public text and official indicator data. The strongest engineering choices are the separation of raw and processed data, explicit source registration, archive-based GDELT ingestion for both incremental and historical runs, consistent index configuration, a single API serving path, Redis-backed runtime diagnostics and API caching, and a testable FastAPI interface. The main analytical caution is that each source measures a different phenomenon: social discussion, media coverage and official price indicators should be compared carefully rather than merged into one sentiment claim.
+The platform demonstrates a maintainable cloud analytics pattern for public text and official indicator data. The strongest engineering choices are the separation of raw and processed data, explicit source registration, archive-based GDELT ingestion for both incremental and historical runs, consistent index configuration, a single API serving path, Redis-backed runtime diagnostics and API caching, queue-backed KEDA NLP scaling, ILM-managed processed indices, and a testable FastAPI interface. The main analytical caution is that each source measures a different phenomenon: social discussion, media coverage and official price indicators should be compared carefully rather than merged into one sentiment claim.
 
 \bibliographystyle{plain}
 \bibliography{references}

@@ -1,7 +1,7 @@
 """Public-release checks for the repository.
 
 The checks are intentionally conservative. They look for tracked local files,
-uncleared notebook outputs, oversized artifacts and legacy/private markers in
+uncleared notebook outputs, oversized artifacts and private project markers in
 text files and the rendered report.
 """
 

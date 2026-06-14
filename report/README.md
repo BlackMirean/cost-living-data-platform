@@ -1,6 +1,6 @@
 # Report
 
-This folder contains the anonymised engineering report for the cost-of-living data platform.
+Anonymised engineering report for the cost-of-living data platform.
 
 | Path | Purpose |
 | --- | --- |

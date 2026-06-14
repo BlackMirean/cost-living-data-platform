@@ -20,7 +20,7 @@ kubectl apply -f deployment/fission/platform-environment.yaml
 kubectl apply -f deployment/fission/platform-secrets.example.yaml
 ```
 
-Replace placeholder values in the Secret before using it in a real cluster.
+Create real Secret values before using the manifest in a real cluster.
 
 ## Package
 
@@ -66,7 +66,6 @@ fission function test --name cost-living-platform-mastodon-au-harvester --timeou
 fission function test --name cost-living-platform-mastodon-social-harvester --timeout 5m
 fission function test --name cost-living-platform-gdelt-harvester --timeout 8m
 fission function test --name cost-living-platform-raw-integrator --timeout 10m
-fission function test --name cost-living-platform-nlp-processor --timeout 20m
 fission function test --name cost-living-platform-official-indicators --timeout 5m
 ```
 
@@ -85,10 +84,32 @@ fission timer list
 kubectl get timetrigger -n default
 ```
 
+## KEDA NLP Worker
+
+Deploy the queue-based NLP worker after Redis and the API ConfigMap exist:
+
+```bash
+kubectl apply -f deployment/kubernetes/nlp-worker-deployment.yaml
+kubectl -n cost-living get scaledobject,pods -l app=cost-living-platform-nlp-worker
+```
+
+Raw integration writes work items to:
+
+```text
+cost_living_pipeline:queue:nlp
+```
+
+Worker messages retry up to `NLP_QUEUE_MAX_ATTEMPTS`. Exhausted or malformed messages are isolated in:
+
+```text
+cost_living_pipeline:queue:nlp:dead-letter
+```
+
 ## Elasticsearch Checks
 
 ```bash
 python scripts/inspect_es_indices.py --json --sample-size 0
+python scripts/apply_elasticsearch_lifecycle.py
 ```
 
 The raw integrator should read only these source streams:

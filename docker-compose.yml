@@ -38,9 +38,38 @@ services:
       REDIS_URL: redis://redis:6379/0
       RAW_POSTS_INDEX: cost_living_raw_posts
       POSTS_INDEX: cost_living_posts_current
+      PROCESSED_POSTS_WRITE_INDEX: cost_living_processed_posts_write
+      POSTS_CURRENT_ALIAS: cost_living_posts_current
       INDICATORS_INDEX: cost_living_indicators
+      API_RATE_LIMIT_ENABLED: "true"
+      OTEL_CONSOLE_EXPORTER_ENABLED: "false"
     ports:
       - "8000:8000"
+    depends_on:
+      redis:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+
+  nlp-worker:
+    build:
+      context: .
+      dockerfile: deployment/docker/api.Dockerfile
+    container_name: cost-living-nlp-worker
+    profiles: ["workers"]
+    command: ["python", "-m", "backend.processing.queue_worker"]
+    environment:
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+      REDIS_ENABLED: "true"
+      REDIS_URL: redis://redis:6379/0
+      RAW_POSTS_INDEX: cost_living_raw_posts
+      POSTS_INDEX: cost_living_posts_current
+      PROCESSED_POSTS_WRITE_INDEX: cost_living_processed_posts_write
+      POSTS_CURRENT_ALIAS: cost_living_posts_current
+      NLP_QUEUE_NAME: nlp
+      NLP_QUEUE_MAX_ATTEMPTS: "3"
+      NLP_QUEUE_DEAD_LETTER_NAME: nlp:dead-letter
+      OTEL_CONSOLE_EXPORTER_ENABLED: "false"
     depends_on:
       redis:
         condition: service_healthy

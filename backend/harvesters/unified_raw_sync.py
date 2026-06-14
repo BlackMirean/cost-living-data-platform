@@ -12,6 +12,7 @@ from backend.common.source_registry import (
     platform_source_indices,
     source_names,
 )
+from backend.common.work_queue import enqueue_nlp_work
 from scripts.import_raw_streams import run_import
 
 
@@ -46,15 +47,17 @@ def _run_raw_sync() -> dict[str, Any]:
         strict_filter=False,
         scan_size=settings.unified_raw_sync_scan_size,
         bulk_size=settings.unified_raw_sync_bulk_size,
-        sample_size=3,
+        sample_size=0,
         max_text_length=settings.unified_raw_sync_max_text_length,
         reset_target=False,
         write=True,
     )
     result = run_import(args)
+    written = sum(int(summary.get("written", 0)) for summary in result.get("summaries", []))
     result["isolation_mode"] = "platform_only"
     result["configured_source_indices"] = configured_source_indices()
     result["required_platform_source_indices"] = PLATFORM_SOURCE_INDICES
+    result["nlp_queue"] = enqueue_nlp_work(reason="raw_integrator", document_count=written)
     return result
 
 

@@ -10,7 +10,10 @@ def test_openapi_includes_cost_of_living_routes():
     assert "/api/pipeline/status" in paths
     assert "/api/pipeline/runtime" in paths
     assert "/api/pipeline/events" in paths
+    assert "/api/pipeline/queues" in paths
     assert "/api/cache/status" in paths
+    assert "/api/rate-limit/status" in paths
+    assert "/api/metrics" in paths
     assert "/api/platforms/plugins" in paths
     assert "/api/stats/overview" in paths
     assert "/api/categories/counts" in paths
@@ -39,6 +42,26 @@ def test_cost_living_prefix_rewrites_to_api_routes(monkeypatch):
 
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
+    assert response.headers["x-request-id"]
+
+
+def test_request_id_header_is_preserved(monkeypatch):
+    monkeypatch.setattr("backend.api.main.analytics_store.health", lambda: {"status": "ok"})
+    client = TestClient(app)
+
+    response = client.get("/api/health", headers={"X-Request-ID": "request-123"})
+
+    assert response.status_code == 200
+    assert response.headers["x-request-id"] == "request-123"
+
+
+def test_metrics_endpoint_exposes_prometheus_metrics():
+    client = TestClient(app)
+
+    response = client.get("/metrics")
+
+    assert response.status_code == 200
+    assert "cost_living_api_requests_total" in response.text
 
 
 def test_platform_plugins_route_exposes_current_sources():

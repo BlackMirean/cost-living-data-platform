@@ -1,6 +1,6 @@
 # Documentation
 
-This directory contains the public technical documentation for the cost-of-living data platform.
+Public technical documentation for the cost-of-living data platform.
 
 | Topic | Document |
 | --- | --- |

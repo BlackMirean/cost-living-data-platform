@@ -8,7 +8,7 @@ GDELT_GKG_BACKFILL_START ?= 2026-05-01
 GDELT_GKG_BACKFILL_END ?= 2026-05-02
 GDELT_GKG_BACKFILL_MAX_ARCHIVES ?= 4
 
-.PHONY: install wait api test public-check ci smoke stress gdelt-backfill-dry-run gdelt-backfill inspect-raw import-stream-dry rebuild-unified-raw sync-recent
+.PHONY: install wait api test public-check ci smoke stress gdelt-backfill-dry-run gdelt-backfill inspect-raw import-stream-dry rebuild-unified-raw sync-recent apply-ilm
 
 install:
 	$(PYTHON) -m pip install -r requirements.txt
@@ -50,3 +50,6 @@ rebuild-unified-raw:
 
 sync-recent:
 	. scripts/load_cloud_env.sh && $(PYTHON) scripts/import_raw_streams.py --write --lookback-hours 2 --limit-per-index 0 --scan-size 1000 --bulk-size 1000
+
+apply-ilm:
+	. scripts/load_cloud_env.sh && $(PYTHON) scripts/apply_elasticsearch_lifecycle.py

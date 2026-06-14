@@ -11,7 +11,7 @@ Please report sensitive issues privately to the repository owner. Do not open a 
 ## Secret Handling
 
 - Runtime secrets belong in Kubernetes Secrets, local `.env` files or platform secret stores.
-- Example manifests must contain placeholders only.
+- Example manifests must contain non-secret sample values only.
 - Rotate any token that may have been committed, logged or shared.
 - Run `make public-check` before publishing a release.
 

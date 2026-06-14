@@ -53,7 +53,10 @@ If both `source_group` and `platform` are provided, the backend applies their in
 | `GET /pipeline/status` | Raw, processed, discarded, failed and CPI counts |
 | `GET /pipeline/runtime` | Optional Redis runtime queue status |
 | `GET /pipeline/events` | Recent Redis-backed pipeline lifecycle events |
+| `GET /pipeline/queues` | Redis work queue depth for KEDA-scaled workers |
 | `GET /cache/status` | API response cache backend, TTL and hit/miss counters |
+| `GET /rate-limit/status` | API rate limit configuration and backend |
+| `GET /metrics` | Prometheus scrape endpoint |
 | `GET /stats/overview` | High-level document and sentiment summary |
 | `GET /trends/documents` | Document counts over time |
 | `GET /categories/counts` | Topic/category counts |
@@ -77,6 +80,8 @@ Prefix these paths with `/api/cost-living` in deployed and notebook clients.
 `GET /platforms/plugins` returns the current static source plugin catalog. Each item includes the platform name, source group, configured raw index, expected raw stream index, Fission handler list, schedule list and whether the configured index matches the platform-specific stream.
 
 `GET /pipeline/events?limit=20` returns recent job lifecycle events when Redis is enabled. Events include `run_id`, job name, status, timestamp, duration and any error summary.
+
+All API responses include `X-Request-ID`. If the client sends `X-Request-ID`, the API preserves it; otherwise it generates a UUID. Rate-limited responses return HTTP 429 with `Retry-After` and `X-RateLimit-*` headers.
 
 ## Client Pattern
 
@@ -118,4 +123,6 @@ export async function apiGet<T>(
 - Ratio fields such as `percentage`, `negative_ratio` and `duplicate_ratio` are decimals from `0` to `1`.
 - Monthly trend endpoints return `YYYY-MM`; daily endpoints return `YYYY-MM-DD`.
 - GDELT rows should be labelled as media coverage, not public sentiment.
+- `/pipeline/queues` reports the active NLP queue and dead-letter queue depths for worker operations checks.
 - `/cache/status` reports the API cache backend, TTL and local hit/miss counters for operations checks.
+- `/metrics` exposes request count, latency, in-flight, cache and rate-limit metrics in Prometheus format.

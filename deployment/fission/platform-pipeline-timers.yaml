@@ -67,17 +67,6 @@ spec:
 apiVersion: fission.io/v1
 kind: TimeTrigger
 metadata:
-  name: cost-living-platform-nlp-processor-15m
-  namespace: default
-spec:
-  cron: "8,23,38,53 * * * *"
-  functionref:
-    name: cost-living-platform-nlp-processor
-    type: name
----
-apiVersion: fission.io/v1
-kind: TimeTrigger
-metadata:
   name: cost-living-platform-official-indicators-daily
   namespace: default
 spec:
