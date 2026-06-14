@@ -182,7 +182,7 @@ Important reliability choices include:
     \item separate raw and processed indices;
     \item explicit processing state fields;
     \item a stable processed-data alias for API reads;
-    \item short API response caching to reduce repeated aggregation load;
+    \item Redis-backed short API response caching with an in-memory fallback to reduce repeated aggregation load;
     \item request logging in the FastAPI layer;
     \item Redis-backed job locks, lifecycle events and run identifiers for scheduled jobs;
     \item Kubernetes ConfigMaps and Secrets for environment-specific configuration.
@@ -190,10 +190,10 @@ Important reliability choices include:
 
 \section{Validation and Results}
 
-The repository test suite covers harvester helpers, ABS CPI parsing, GDELT archive processing, GDELT backfill resume behaviour, source registry logic, NLP processing, Redis runtime queue behaviour, analytics store behaviour and API route wiring. The current public branch passes:
+The repository test suite covers harvester helpers, ABS CPI parsing, GDELT archive processing, GDELT backfill resume behaviour, source registry logic, NLP processing, Redis runtime queue behaviour, API cache behaviour, analytics store behaviour and API route wiring. The current public branch passes:
 
 \begin{center}
-\idx{53 pytest tests passing}
+\idx{49 pytest tests passing}
 \end{center}
 
 The original cloud run processed approximately 245k raw documents, 225k processed documents and 10,134 ABS CPI observations. These counts are a snapshot of the historical run, not a live service guarantee.
@@ -262,7 +262,7 @@ The CPI comparison is descriptive. CPI measures official price movement, while s
 
 \section{Conclusion}
 
-The platform demonstrates a maintainable cloud analytics pattern for public text and official indicator data. The strongest engineering choices are the separation of raw and processed data, explicit source registration, archive-based GDELT ingestion for both incremental and historical runs, consistent index configuration, a single API serving path, Redis-backed runtime diagnostics, and a testable FastAPI interface. The main analytical caution is that each source measures a different phenomenon: social discussion, media coverage and official price indicators should be compared carefully rather than merged into one sentiment claim.
+The platform demonstrates a maintainable cloud analytics pattern for public text and official indicator data. The strongest engineering choices are the separation of raw and processed data, explicit source registration, archive-based GDELT ingestion for both incremental and historical runs, consistent index configuration, a single API serving path, Redis-backed runtime diagnostics and API caching, and a testable FastAPI interface. The main analytical caution is that each source measures a different phenomenon: social discussion, media coverage and official price indicators should be compared carefully rather than merged into one sentiment claim.
 
 \bibliographystyle{plain}
 \bibliography{references}

@@ -16,6 +16,7 @@ ENDPOINTS: list[tuple[str, dict[str, str]]] = [
     ("/pipeline/status", {}),
     ("/pipeline/runtime", {}),
     ("/pipeline/events", {"limit": "20"}),
+    ("/cache/status", {}),
     ("/platforms/plugins", {}),
     ("/stats/overview", {"source_group": "social", "quality": "clean"}),
     ("/trends/documents", {"period": "month", "source_group": "social", "quality": "clean"}),

@@ -53,7 +53,7 @@ cost_living_monthly_topic_metrics
 
 Detailed commands are in [package_commands.md](package_commands.md).
 
-## Optional Redis Runtime Queue
+## Optional Redis Runtime Services
 
 The Fission handlers use Redis when `REDIS_ENABLED=true`. Redis provides job locks and recent lifecycle events; it does not replace Elasticsearch document storage or NLP processing state.
 
@@ -63,7 +63,7 @@ Deploy Redis first:
 kubectl apply -f deployment/redis/redis.yaml
 ```
 
-Then set:
+The provided Fission ConfigMap enables Redis. The relevant settings are:
 
 ```yaml
 REDIS_ENABLED: "true"

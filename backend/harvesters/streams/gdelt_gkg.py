@@ -181,7 +181,3 @@ def main() -> dict[str, Any]:
     }
     log_incremental_event("gdelt_incremental_finished", **summary)
     return summary
-
-
-def harvest_gdelt_gkg_stream() -> dict[str, Any]:
-    return main()

@@ -395,18 +395,3 @@ def main() -> dict:
     }
     update_state(since, until, stats)
     return {"function": FUNCTION_NAME, "index": RAW_INDEX, **stats}
-
-
-def harvest_mastodon_au_stream() -> dict:
-    configure_stream("mastodon_au")
-    return main()
-
-
-def harvest_mastodon_social_stream() -> dict:
-    configure_stream("mastodon_social")
-    return main()
-
-
-def harvest_aus_social_stream() -> dict:
-    configure_stream("aus_social")
-    return main()

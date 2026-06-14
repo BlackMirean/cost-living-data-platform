@@ -20,7 +20,7 @@ GDELT raw stream records are produced from public GKG archive files listed in `m
 database/mappings/gdelt_raw_stream.json
 ```
 
-The unified raw index may also contain historical seed records imported from an earlier compatible collection. Their `source_index` values are kept unchanged for provenance. Do not rewrite them to make old data look like current harvest output.
+If records are restored from a backup or backfill, their `source_index` values are kept unchanged for provenance. Do not rewrite source lineage to make restored data look like live harvest output.
 
 Source metadata is centralized in static platform plugins:
 
@@ -28,7 +28,7 @@ Source metadata is centralized in static platform plugins:
 backend/platforms/plugins.py
 ```
 
-The compatibility registry in `backend/common/source_registry.py` exposes plugin metadata to the raw integrator, NLP worker and API. Each plugin defines the source name, source group, raw stream index, optimized stream index, label, Fission handler list and schedule list.
+The source registry in `backend/common/source_registry.py` exposes plugin metadata to the raw integrator, NLP worker and API. Each plugin defines the source name, source group, raw stream index, optimized stream index, label, Fission handler list and schedule list.
 
 | Source | Source group | Raw stream index |
 | --- | --- | --- |
@@ -117,7 +117,7 @@ The API reads through the alias. This lets the processed index be rebuilt withou
 | `sentiment_label` | keyword | `negative`, `neutral` or `positive` |
 | `sentiment_score` | float | VADER compound score |
 | `model_name` | keyword | Currently `vader` |
-| `model_version` | keyword | Currently `v2` |
+| `model_version` | keyword | Currently `cost_living_topic_sentiment_2026_06` |
 | `processor_version` | keyword | NLP worker contract version |
 | `processing_status` | keyword | `processed`, `discarded` or `error` |
 | `relevance_score` | integer | Lightweight relevance score |
@@ -258,7 +258,7 @@ This comparison is contextual. It is not causal modelling.
 
 ## 8. Fields That Are Not Stable Elasticsearch Contracts
 
-The frontend should not depend directly on these legacy or derived fields:
+The frontend should not depend directly on these API-only or derived fields:
 
 ```text
 cost_category
@@ -266,7 +266,6 @@ category_label
 is_complaint
 keywords
 city
-reddit
 ```
 
 `cost_category` and `category_label` are API response fields. They are not raw Elasticsearch fields.

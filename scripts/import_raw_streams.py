@@ -240,8 +240,6 @@ def bulk_write(client: Any, target_index: str, docs: list[dict[str, Any]]) -> in
 def selected_indices(args: argparse.Namespace) -> list[tuple[str, str]]:
     selected: list[tuple[str, str]] = []
     sources = list(args.sources)
-    if args.include_gdelt_gkg and "gdelt" not in sources:
-        sources.append("gdelt")
     for source in sources:
         if source not in SOURCE_INDICES:
             raise ValueError("Unknown source: " + source + ". Choices: " + source_choices_text())
@@ -321,11 +319,6 @@ def build_parser() -> argparse.ArgumentParser:
         nargs="+",
         default=source_names(),
         help="Sources to import. Choices: " + source_choices_text() + ". Defaults to all sources.",
-    )
-    parser.add_argument(
-        "--include-gdelt-gkg",
-        action="store_true",
-        help="Backward-compatible flag that adds gdelt to sources.",
     )
     parser.add_argument(
         "--target-index",

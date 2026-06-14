@@ -86,23 +86,7 @@ class Settings(BaseSettings):
     unified_raw_sync_scan_size: int = 1000
     unified_raw_sync_bulk_size: int = 1000
     unified_raw_sync_max_text_length: int = 10000
-    unified_raw_sync_require_platform_indices: bool = False
 
-    gdelt_doc_api_url: str = "https://api.gdeltproject.org/api/v2/doc/doc"
-    gdelt_queries: str = (
-        "cost of living,rental crisis,rent increase,mortgage stress,"
-        "housing affordability,electricity prices,energy bills,petrol prices,"
-        "fuel prices,grocery prices,food prices,supermarket prices,inflation,"
-        "real wages,interest rates"
-    )
-    gdelt_source_country: str = "australia"
-    gdelt_source_language: str = "english"
-    gdelt_timespan: str = "3months"
-    gdelt_limit: int = 15
-    gdelt_request_delay_seconds: float = 6.0
-    gdelt_request_timeout_seconds: float = 20.0
-    gdelt_retries: int = 2
-    gdelt_max_runtime_seconds: float = 240.0
     nlp_batch_size: int = 250
     nlp_max_docs_per_run: int = 1000
     nlp_bulk_size: int = 500
@@ -118,10 +102,6 @@ class Settings(BaseSettings):
     @property
     def cost_of_living_query_list(self) -> list[str]:
         return [item.strip() for item in self.cost_of_living_queries.split(",") if item.strip()]
-
-    @property
-    def gdelt_query_list(self) -> list[str]:
-        return [item.strip() for item in self.gdelt_queries.split(",") if item.strip()]
 
     model_config = SettingsConfigDict(
         env_file=".env",

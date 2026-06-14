@@ -1,12 +1,13 @@
-# Redis Runtime Queue
+# Redis Runtime Services
 
-This directory contains a lightweight Redis deployment for optional pipeline runtime coordination.
+This directory contains a lightweight Redis deployment for optional pipeline runtime coordination and API response caching.
 
-Redis is used only for job-level runtime concerns:
+Redis is used for runtime concerns that should not be stored in Elasticsearch:
 
 - distributed locks for scheduled jobs;
 - recent pipeline lifecycle events;
-- API diagnostics through `/api/cost-living/pipeline/runtime` and `/api/cost-living/pipeline/events`.
+- API diagnostics through `/api/cost-living/pipeline/runtime` and `/api/cost-living/pipeline/events`;
+- shared short-lived API response caching for repeated analytics reads, exposed through `/api/cost-living/cache/status`.
 
 Elasticsearch remains the source of truth for raw documents, processed documents, status fields and analytics.
 

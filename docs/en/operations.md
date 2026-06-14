@@ -47,7 +47,7 @@ Optional Kibana:
 docker compose --profile tools up kibana
 ```
 
-Docker Compose also starts Redis for runtime queue diagnostics. Fission jobs use the same Redis settings when `REDIS_ENABLED=true` in the cloud ConfigMaps.
+Docker Compose also starts Redis for runtime diagnostics and API caching. Fission jobs use the same Redis settings when `REDIS_ENABLED=true` in the cloud ConfigMaps.
 
 ## Elasticsearch Inspection
 
@@ -147,15 +147,15 @@ Deployment order:
 
 Detailed commands are in [deployment/fission/package_commands.md](../../deployment/fission/package_commands.md).
 
-## Optional Redis Runtime Queue
+## Optional Redis Runtime Services
 
-Deploy Redis before enabling the runtime queue:
+Deploy Redis before enabling runtime coordination:
 
 ```bash
 kubectl apply -f deployment/redis/redis.yaml
 ```
 
-Set `REDIS_ENABLED=true` in both API and Fission ConfigMaps. Redis is used for scheduled job locks and lifecycle events; Elasticsearch still stores document state.
+The provided Kubernetes and Fission ConfigMaps enable Redis. Redis is used for scheduled job locks, lifecycle events and shared API response caching; Elasticsearch still stores document state.
 
 ## GDELT Archive Ingestion
 
@@ -232,8 +232,8 @@ For a Kubernetes port-forward, use `API_BASE_URL=http://127.0.0.1:8010`.
 
 ## Validation Snapshot
 
-The repository-level test suite currently covers harvesters, GDELT archive processing and backfill resume behaviour, NLP processing, analytics queries, source plugins, Redis runtime queue logic and API route wiring.
+The repository-level test suite currently covers harvesters, GDELT archive processing and backfill resume behaviour, NLP processing, analytics queries, source plugins, Redis runtime queue logic, API cache behaviour and API route wiring.
 
 ```text
-53 pytest tests passing
+49 pytest tests passing
 ```

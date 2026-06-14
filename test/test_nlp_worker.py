@@ -40,7 +40,7 @@ def test_build_contract_doc_keeps_lineage_and_sentiment_alias():
     assert doc["canonical_id"].startswith("canonical-")
     assert doc["sentiment_score"] == -0.25
     assert doc["processing_status"] == "processed"
-    assert doc["model_version"] == "v2"
+    assert doc["model_version"] == "cost_living_topic_sentiment_2026_06"
 
 
 def test_process_hit_discards_low_relevance_ad():

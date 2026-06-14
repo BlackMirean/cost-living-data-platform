@@ -53,6 +53,7 @@ If both `source_group` and `platform` are provided, the backend applies their in
 | `GET /pipeline/status` | Raw, processed, discarded, failed and CPI counts |
 | `GET /pipeline/runtime` | Optional Redis runtime queue status |
 | `GET /pipeline/events` | Recent Redis-backed pipeline lifecycle events |
+| `GET /cache/status` | API response cache backend, TTL and hit/miss counters |
 | `GET /stats/overview` | High-level document and sentiment summary |
 | `GET /trends/documents` | Document counts over time |
 | `GET /categories/counts` | Topic/category counts |
@@ -117,3 +118,4 @@ export async function apiGet<T>(
 - Ratio fields such as `percentage`, `negative_ratio` and `duplicate_ratio` are decimals from `0` to `1`.
 - Monthly trend endpoints return `YYYY-MM`; daily endpoints return `YYYY-MM-DD`.
 - GDELT rows should be labelled as media coverage, not public sentiment.
+- `/cache/status` reports the API cache backend, TTL and local hit/miss counters for operations checks.

@@ -363,7 +363,3 @@ def main() -> dict:
     }
     update_state(since, until, stats)
     return {"function": FUNCTION_NAME, "index": RAW_INDEX, **stats}
-
-
-def harvest_bluesky_stream() -> dict:
-    return main()

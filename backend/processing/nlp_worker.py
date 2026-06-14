@@ -25,7 +25,7 @@ from backend.common.source_registry import (
 
 
 MODEL_NAME = "vader"
-MODEL_VERSION = "v2"
+MODEL_VERSION = "cost_living_topic_sentiment_2026_06"
 SOCIAL_PLATFORMS = social_platforms()
 
 COMPLAINT_KEYWORDS = [

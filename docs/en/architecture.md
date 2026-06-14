@@ -4,7 +4,7 @@ The platform monitors Australian cost-of-living pressure using public social pos
 
 - Fission scheduled jobs for ingestion, raw integration, NLP processing and CPI updates.
 - A single FastAPI REST API for all dashboard and notebook reads.
-- Optional Redis runtime coordination for scheduled job locks and recent event diagnostics.
+- Optional Redis runtime coordination for scheduled job locks, recent event diagnostics and shared API response caching.
 
 Fission is not used as a duplicate HTTP API layer in the public version.
 
@@ -31,6 +31,7 @@ flowchart LR
     subgraph Redis["Optional Redis"]
         LOCKS["job locks"]
         EVENTS["pipeline events"]
+        CACHE["API cache"]
     end
 
     subgraph ES["Elasticsearch"]
@@ -98,7 +99,7 @@ Raw records start with `analysis_status = pending`. The NLP worker atomically cl
 
 Stable document ids make repeated harvesting idempotent. Stale `processing` records can be retried after `NLP_PROCESSING_STALE_MINUTES`.
 
-Elasticsearch stores document processing state because the raw documents and status fields need to be queryable together. Redis is used at a different layer: optional distributed locks prevent overlapping timer executions, and a short event queue records job lifecycle events with a `run_id` for runtime diagnostics.
+Elasticsearch stores document processing state because the raw documents and status fields need to be queryable together. Redis is used at a different layer: optional distributed locks prevent overlapping timer executions, a short event queue records job lifecycle events with a `run_id`, and the API can share short-lived analytics response cache entries across replicas.
 
 ## Runtime Queue
 

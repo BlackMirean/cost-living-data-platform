@@ -31,15 +31,13 @@ def validate_platform_source_indices() -> None:
         )
 
 
-def _run_raw_sync(*, platform_only: bool = False) -> dict[str, Any]:
+def _run_raw_sync() -> dict[str, Any]:
     """Incrementally copy recent upstream raw documents into the unified raw index."""
 
-    if platform_only or settings.unified_raw_sync_require_platform_indices:
-        validate_platform_source_indices()
+    validate_platform_source_indices()
 
     args = Namespace(
         sources=source_names(),
-        include_gdelt_gkg=False,
         target_index=settings.raw_posts_index,
         limit_per_index=0,
         start_date=None,
@@ -54,15 +52,11 @@ def _run_raw_sync(*, platform_only: bool = False) -> dict[str, Any]:
         write=True,
     )
     result = run_import(args)
-    result["isolation_mode"] = "platform_only" if platform_only else "configured_sources"
+    result["isolation_mode"] = "platform_only"
     result["configured_source_indices"] = configured_source_indices()
-    result["required_platform_source_indices"] = PLATFORM_SOURCE_INDICES if platform_only else {}
+    result["required_platform_source_indices"] = PLATFORM_SOURCE_INDICES
     return result
 
 
-def sync_unified_raw_posts() -> dict[str, Any]:
-    return _run_raw_sync(platform_only=False)
-
-
 def sync_platform_raw_posts() -> dict[str, Any]:
-    return _run_raw_sync(platform_only=True)
+    return _run_raw_sync()

@@ -10,6 +10,7 @@ from typing import Any
 from fastapi import FastAPI, Query
 
 from backend.common import analytics_store, source_registry
+from backend.common.api_cache import ApiResponseCache
 from backend.common.config import settings
 from backend.common.runtime_queue import runtime_queue_events, runtime_queue_status
 
@@ -17,7 +18,7 @@ from backend.common.runtime_queue import runtime_queue_events, runtime_queue_sta
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
 logger = logging.getLogger(__name__)
 app = FastAPI(title=settings.api_title)
-_CACHE: dict[tuple[Any, ...], tuple[float, dict[str, Any]]] = {}
+_CACHE = ApiResponseCache()
 PLATFORM_PREFIX = "/api/cost-living"
 
 
@@ -51,16 +52,7 @@ async def support_platform_prefix(request: Any, call_next: Callable[[Any], Any])
 def cached(key: tuple[Any, ...], producer: Callable[[], dict[str, Any]]) -> dict[str, Any]:
     """Return short-lived cached analytics responses to reduce repeated ES work."""
 
-    ttl = settings.api_cache_ttl_seconds
-    if ttl <= 0:
-        return producer()
-    now = time.monotonic()
-    cached_value = _CACHE.get(key)
-    if cached_value and now - cached_value[0] < ttl:
-        return cached_value[1]
-    value = producer()
-    _CACHE[key] = (now, value)
-    return value
+    return _CACHE.get_or_set(key, producer)
 
 
 def filter_key(
@@ -102,6 +94,11 @@ def pipeline_runtime() -> dict[str, Any]:
 @app.get("/api/pipeline/events")
 def pipeline_events(limit: int = Query(default=50, ge=1, le=500)) -> dict[str, Any]:
     return runtime_queue_events(limit=limit)
+
+
+@app.get("/api/cache/status")
+def cache_status() -> dict[str, Any]:
+    return _CACHE.status()
 
 
 @app.get("/api/platforms/plugins")

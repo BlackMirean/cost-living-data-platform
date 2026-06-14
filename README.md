@@ -35,9 +35,10 @@ flowchart LR
         CPI["Official indicators"]
     end
 
-    subgraph RQ["Optional Redis runtime queue"]
+    subgraph RQ["Optional Redis runtime services"]
         LOCKS["job locks"]
         EVENTS["pipeline events"]
+        CACHE["API cache"]
     end
 
     subgraph ES["Elasticsearch"]
@@ -75,9 +76,9 @@ flowchart LR
 
 The public architecture deliberately has one API path: FastAPI. Fission is used for scheduled ingestion and processing jobs, not as a second copy of the analytics API.
 
-Redis is optional and is used only for runtime coordination: scheduled job locks and recent pipeline lifecycle events. Elasticsearch remains the source of truth for documents, processing status and analytics.
+Redis is optional. When enabled, it provides scheduled job locks, recent pipeline lifecycle events and a shared short-lived API response cache. Elasticsearch remains the source of truth for documents, processing status and analytics.
 
-GDELT ingestion uses the public GKG archive list at `masterfilelist.txt`. Incremental harvesting and historical backfill share the same archive processor: list archive metadata, download `.gkg.csv.zip` files, verify md5 checksums, extract CSV rows, filter for Australian cost-of-living signals and bulk index matching records. The GDELT DOC API helper is retained only for small diagnostic searches and is not part of the production ingestion path.
+GDELT ingestion uses the public GKG archive list at `masterfilelist.txt`. Incremental harvesting and historical backfill share the same archive processor: list archive metadata, download `.gkg.csv.zip` files, verify md5 checksums, extract CSV rows, filter for Australian cost-of-living signals and bulk index matching records.
 
 ## Repository Layout
 
@@ -122,6 +123,7 @@ GET /api/cost-living/health
 GET /api/cost-living/pipeline/status
 GET /api/cost-living/pipeline/runtime
 GET /api/cost-living/pipeline/events
+GET /api/cost-living/cache/status
 GET /api/cost-living/platforms/plugins
 GET /api/cost-living/stats/overview
 GET /api/cost-living/trends/documents
@@ -210,27 +212,27 @@ The deployment templates are split by responsibility:
 | --- | --- |
 | [deployment/kubernetes](deployment/kubernetes) | FastAPI API Deployment, Service and optional HPA |
 | [deployment/fission](deployment/fission) | Scheduled ingestion and processing functions |
-| [deployment/redis](deployment/redis) | Optional Redis runtime queue and job locks |
+| [deployment/redis](deployment/redis) | Optional Redis runtime queue, job locks and API cache |
 | [deployment/docker/api.Dockerfile](deployment/docker/api.Dockerfile) | API image build |
 
 The Kubernetes API manifest expects a built image. Replace `ghcr.io/your-username/cost-living-platform-api:latest` with your registry image before applying it.
 
 Fission manifests include only scheduled pipeline jobs. They do not deploy duplicate HTTP API functions.
 
-Deploy Redis only when you want distributed job locks and runtime event diagnostics:
+Deploy Redis when you want distributed job locks, runtime event diagnostics and shared API response caching:
 
 ```bash
 kubectl apply -f deployment/redis/redis.yaml
 ```
 
-Then set `REDIS_ENABLED=true` in the API and Fission ConfigMaps.
+The Kubernetes and Fission deployment ConfigMaps enable Redis by default. Set `REDIS_ENABLED=false` only when deploying without Redis.
 
 ## Validation
 
 Current repository validation:
 
 ```text
-53 pytest tests passing
+49 pytest tests passing
 ```
 
 Useful checks:
