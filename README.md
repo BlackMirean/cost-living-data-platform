@@ -27,11 +27,13 @@ The system collects public data from Bluesky, Mastodon and GDELT, normalises raw
       <a href="https://github.com/BlackMirean/cost-living-data-platform/commits?author=R1ta-Xjsmhtio" title="Code">💻</a>
     </td>
     <td align="center">
-      <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" width="80px;" alt="Contributor 3" />
+      <a href="https://github.com/meicongc">
+        <img src="https://avatars.githubusercontent.com/u/270546984?v=4" width="80px;" alt="meicongc" />
+        <br />
+        <sub><b>meicongc</b></sub>
+      </a>
       <br />
-      <sub><b>Contributor 3</b></sub>
-      <br />
-      <span title="Code">💻</span>
+      <a href="https://github.com/BlackMirean/cost-living-data-platform/commits?author=meicongc" title="Code">💻</a>
     </td>
     <td align="center">
       <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" width="80px;" alt="Contributor 4" />
