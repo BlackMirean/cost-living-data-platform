@@ -45,11 +45,13 @@ The system collects public data from Bluesky, Mastodon and GDELT, normalises raw
       <a href="https://gitlab.unimelb.edu.au/zhantaos" title="Code">💻</a>
     </td>
     <td align="center">
-      <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" width="80px;" alt="Contributor 5" />
+      <a href="https://gitlab.unimelb.edu.au/yli13923">
+        <img src="https://secure.gravatar.com/avatar/33658ec48439966f82b36275d69de6664530c2012a114cb297f90c19b9c0e170?s=384&amp;d=identicon" width="80px;" alt="Li" />
+        <br />
+        <sub><b>Li</b></sub>
+      </a>
       <br />
-      <sub><b>Contributor 5</b></sub>
-      <br />
-      <span title="Code">💻</span>
+      <a href="https://gitlab.unimelb.edu.au/yli13923" title="Code">💻</a>
     </td>
   </tr>
 </table>
