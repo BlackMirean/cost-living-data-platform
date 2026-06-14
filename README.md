@@ -4,6 +4,48 @@ Cloud data pipeline for monitoring Australian cost-of-living pressure across pub
 
 The system collects public data from Bluesky, Mastodon and GDELT, normalises raw records into Elasticsearch, runs topic and sentiment processing, and serves chart-ready analytics through a FastAPI REST API. Jupyter notebooks consume the API for exploratory analysis and dashboard-style visualisation.
 
+## Contributors
+
+<table>
+  <tr>
+    <td align="center">
+      <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" width="80px;" alt="Contributor 1" />
+      <br />
+      <sub><b>Contributor 1</b></sub>
+      <br />
+      <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" width="18px;" alt="GitHub profile" />
+    </td>
+    <td align="center">
+      <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" width="80px;" alt="Contributor 2" />
+      <br />
+      <sub><b>Contributor 2</b></sub>
+      <br />
+      <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" width="18px;" alt="GitHub profile" />
+    </td>
+    <td align="center">
+      <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" width="80px;" alt="Contributor 3" />
+      <br />
+      <sub><b>Contributor 3</b></sub>
+      <br />
+      <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" width="18px;" alt="GitHub profile" />
+    </td>
+    <td align="center">
+      <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" width="80px;" alt="Contributor 4" />
+      <br />
+      <sub><b>Contributor 4</b></sub>
+      <br />
+      <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" width="18px;" alt="GitHub profile" />
+    </td>
+    <td align="center">
+      <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" width="80px;" alt="Contributor 5" />
+      <br />
+      <sub><b>Contributor 5</b></sub>
+      <br />
+      <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" width="18px;" alt="GitHub profile" />
+    </td>
+  </tr>
+</table>
+
 ## Data Sources
 
 | Source | Role | Notes |
@@ -243,7 +285,7 @@ The Kubernetes and Fission deployment ConfigMaps enable Redis by default. Set `R
 Current repository validation:
 
 ```text
-57 pytest tests passing
+63 pytest tests passing
 ```
 
 Useful checks:
