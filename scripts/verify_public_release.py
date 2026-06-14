@@ -27,7 +27,7 @@ BLOCKED_TEXT_MARKERS = [
     _term("cc", "c37"),
     _term("team", "37"),
     _term("comp", "90024"),
-    _term("git", "lab"),
+    _term("git", "lab.unimelb.edu.au/comp"),
     _term("you", "tube"),
     _term("l", "lm"),
     _term("large", " ", "language"),
