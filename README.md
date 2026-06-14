@@ -36,22 +36,22 @@ The system collects public data from Bluesky, Mastodon and GDELT, normalises raw
       <a href="https://github.com/BlackMirean/cost-living-data-platform/commits?author=meicongc" title="Code">💻</a>
     </td>
     <td align="center">
-      <a href="https://gitlab.unimelb.edu.au/zhantaos">
-        <img src="https://secure.gravatar.com/avatar/6cd700183dd263e0188ed6ac86bf10fbf4b64f03bd672b61eb57a073642f896b?s=384&amp;d=identicon" width="80px;" alt="zhantaos" />
+      <a href="https://github.com/ZhanTaoshi0711">
+        <img src="https://github.com/ZhanTaoshi0711.png?size=100" width="80px;" alt="ZhanTaoshi0711" />
         <br />
-        <sub><b>zhantaos</b></sub>
+        <sub><b>ZhanTaoshi0711</b></sub>
       </a>
       <br />
-      <a href="https://gitlab.unimelb.edu.au/zhantaos" title="Code">💻</a>
+      <a href="https://github.com/BlackMirean/cost-living-data-platform/commits?author=ZhanTaoshi0711" title="Code">💻</a>
     </td>
     <td align="center">
-      <a href="https://gitlab.unimelb.edu.au/yli13923">
-        <img src="https://secure.gravatar.com/avatar/33658ec48439966f82b36275d69de6664530c2012a114cb297f90c19b9c0e170?s=384&amp;d=identicon" width="80px;" alt="Li" />
+      <a href="https://github.com/Rainyester">
+        <img src="https://github.com/Rainyester.png?size=100" width="80px;" alt="Rainyester" />
         <br />
-        <sub><b>Li</b></sub>
+        <sub><b>Rainyester</b></sub>
       </a>
       <br />
-      <a href="https://gitlab.unimelb.edu.au/yli13923" title="Code">💻</a>
+      <a href="https://github.com/BlackMirean/cost-living-data-platform/commits?author=Rainyester" title="Code">💻</a>
     </td>
   </tr>
 </table>
