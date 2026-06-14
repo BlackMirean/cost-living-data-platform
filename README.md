@@ -15,35 +15,35 @@ The system collects public data from Bluesky, Mastodon and GDELT, normalises raw
         <sub><b>Tzz</b></sub>
       </a>
       <br />
-      <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" width="18px;" alt="GitHub profile" />
+      <a href="https://github.com/BlackMirean/cost-living-data-platform/commits?author=BlackMirean" title="Code">💻</a>
     </td>
     <td align="center">
       <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" width="80px;" alt="Contributor 2" />
       <br />
       <sub><b>Contributor 2</b></sub>
       <br />
-      <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" width="18px;" alt="GitHub profile" />
+      <span title="Code">💻</span>
     </td>
     <td align="center">
       <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" width="80px;" alt="Contributor 3" />
       <br />
       <sub><b>Contributor 3</b></sub>
       <br />
-      <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" width="18px;" alt="GitHub profile" />
+      <span title="Code">💻</span>
     </td>
     <td align="center">
       <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" width="80px;" alt="Contributor 4" />
       <br />
       <sub><b>Contributor 4</b></sub>
       <br />
-      <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" width="18px;" alt="GitHub profile" />
+      <span title="Code">💻</span>
     </td>
     <td align="center">
       <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" width="80px;" alt="Contributor 5" />
       <br />
       <sub><b>Contributor 5</b></sub>
       <br />
-      <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" width="18px;" alt="GitHub profile" />
+      <span title="Code">💻</span>
     </td>
   </tr>
 </table>
