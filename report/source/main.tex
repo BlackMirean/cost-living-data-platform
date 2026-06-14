@@ -61,19 +61,49 @@
 \newcommand{\idx}[1]{\texttt{#1}}
 \newcommand{\idxsplit}[2]{\begin{tabular}[t]{@{}l@{}}\texttt{#1}\\\texttt{#2}\end{tabular}}
 
-\title{\textbf{Cost-of-Living Data Platform}\\
-\large Cloud Data Pipeline, Search Taxonomy, and Analytics API}
-\author{Tzz and Contributors}
-\date{2026}
-
 \begin{document}
 
-\maketitle
+\begin{titlepage}
+\thispagestyle{empty}
+\centering
+\vspace*{0.8cm}
+{\sffamily\Huge\bfseries Cost-of-Living Data Platform\par}
+\vspace{0.35cm}
+{\sffamily\Large Cloud Data Pipeline, Search Taxonomy, and Analytics API\par}
+\vspace{0.75cm}
+{\large Public Engineering Report \textbar{} 2026\par}
+\vspace{1.0cm}
 
-\begin{abstract}
+\begin{tabularx}{0.88\linewidth}{p{0.24\linewidth}Y}
+\toprule
+Repository & \href{https://github.com/BlackMirean/cost-living-data-platform}{BlackMirean/cost-living-data-platform} \\
+API prefix & \idx{/api/cost-living} \\
+Core stack & FastAPI, Kubernetes, Fission, Redis, KEDA, Elasticsearch \\
+Validation & pytest suite and public release check passing \\
+\bottomrule
+\end{tabularx}
+
+\vspace{1.05cm}
+{\sffamily\bfseries\Large Contributors\par}
+\vspace{0.35cm}
+\begin{tabularx}{0.88\linewidth}{p{0.25\linewidth}Y}
+\toprule
+Tzz & \href{https://github.com/BlackMirean}{github.com/BlackMirean} \\
+R1ta-Xjsmhtio & \href{https://github.com/R1ta-Xjsmhtio}{github.com/R1ta-Xjsmhtio} \\
+meicongc & \href{https://github.com/meicongc}{github.com/meicongc} \\
+zhantaos & \href{https://gitlab.unimelb.edu.au/zhantaos}{gitlab.unimelb.edu.au/zhantaos} \\
+\bottomrule
+\end{tabularx}
+
+\vfill
+{\small Public release version. Runtime secrets, generated caches, and local deployment files are excluded.\par}
+\end{titlepage}
+
+\section*{Executive Summary}
+\addcontentsline{toc}{section}{Executive Summary}
 The cost-of-living data platform monitors Australian public discussion, media coverage, and official CPI indicators through a cloud data pipeline. It collects public records from Bluesky, Mastodon, and GDELT GKG archive files; normalises source-specific records into a unified raw schema; processes text into topics, sentiment labels, and quality flags; and serves chart-ready analytics through a FastAPI REST API. The public architecture keeps one API serving path, uses Fission for scheduled data collection, runs NLP processing through KEDA-scaled Kubernetes workers, and stores data in Elasticsearch with ILM-managed processed indices.
-\end{abstract}
 
+\newpage
 \tableofcontents
 \newpage
 
