@@ -8,7 +8,7 @@ GDELT_GKG_BACKFILL_START ?= 2026-05-01
 GDELT_GKG_BACKFILL_END ?= 2026-05-02
 GDELT_GKG_BACKFILL_MAX_ARCHIVES ?= 4
 
-.PHONY: install wait api test public-check ci smoke stress gdelt-backfill-dry-run gdelt-backfill inspect-raw import-stream-dry rebuild-unified-raw sync-recent apply-ilm
+.PHONY: install wait api test public-check ci smoke stress contract integration gdelt-backfill-dry-run gdelt-backfill inspect-raw import-stream-dry rebuild-unified-raw sync-recent apply-ilm requeue-nlp cloud-drift fission-package cloud-deploy
 
 install:
 	$(PYTHON) -m pip install -r requirements.txt
@@ -33,6 +33,12 @@ smoke:
 stress:
 	$(PYTHON) scripts/stress_cost_living_platform_api.py --base-url $(API_BASE_URL) --prefix $(API_PREFIX) --rounds 10 --workers 3
 
+contract:
+	$(PYTHON) scripts/openapi_contract_check.py --base-url $(API_BASE_URL) --prefix $(API_PREFIX)
+
+integration:
+	PYTHON=$(PYTHON) scripts/run_compose_integration.sh
+
 gdelt-backfill-dry-run:
 	$(PYTHON) -m backend.harvesters.gdelt_backfill --start-date $(GDELT_GKG_BACKFILL_START) --end-date $(GDELT_GKG_BACKFILL_END) --max-archives $(GDELT_GKG_BACKFILL_MAX_ARCHIVES) --dry-run
 
@@ -53,3 +59,15 @@ sync-recent:
 
 apply-ilm:
 	. scripts/load_cloud_env.sh && $(PYTHON) scripts/apply_elasticsearch_lifecycle.py
+
+requeue-nlp:
+	. scripts/load_cloud_env.sh && $(PYTHON) scripts/requeue_pending_nlp.py
+
+cloud-drift:
+	. scripts/load_cloud_env.sh >/dev/null && $(PYTHON) scripts/check_cloud_drift.py
+
+fission-package:
+	scripts/build_fission_package.sh
+
+cloud-deploy:
+	. scripts/load_cloud_env.sh >/dev/null && PYTHON=$(PYTHON) scripts/deploy_cloud_runtime.sh

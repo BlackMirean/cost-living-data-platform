@@ -2,8 +2,11 @@ services:
   redis:
     image: redis:7-alpine
     container_name: cost-living-redis
+    command: ["redis-server", "--appendonly", "yes", "--dir", "/data", "--appendfilename", "appendonly.aof"]
     ports:
-      - "6379:6379"
+      - "${REDIS_HOST_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -18,7 +21,7 @@ services:
       xpack.security.enabled: "false"
       ES_JAVA_OPTS: "-Xms512m -Xmx512m"
     ports:
-      - "9200:9200"
+      - "${ELASTICSEARCH_HOST_PORT:-9200}:9200"
     volumes:
       - es-data:/usr/share/elasticsearch/data
     healthcheck:
@@ -44,7 +47,7 @@ services:
       API_RATE_LIMIT_ENABLED: "true"
       OTEL_CONSOLE_EXPORTER_ENABLED: "false"
     ports:
-      - "8000:8000"
+      - "${API_HOST_PORT:-8000}:8000"
     depends_on:
       redis:
         condition: service_healthy
@@ -83,10 +86,11 @@ services:
     environment:
       ELASTICSEARCH_HOSTS: http://elasticsearch:9200
     ports:
-      - "5601:5601"
+      - "${KIBANA_HOST_PORT:-5601}:5601"
     depends_on:
       elasticsearch:
         condition: service_healthy
 
 volumes:
   es-data:
+  redis-data:

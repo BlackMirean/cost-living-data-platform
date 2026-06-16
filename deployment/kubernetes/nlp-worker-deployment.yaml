@@ -17,9 +17,19 @@ spec:
     spec:
       containers:
         - name: nlp-worker
-          image: ghcr.io/your-username/cost-living-platform-api:latest
+          image: fission/python-env-3.9
           imagePullPolicy: IfNotPresent
-          command: ["python", "-m", "backend.processing.queue_worker"]
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -eu
+              test -n "${FISSION_PACKAGE_URL}"
+              rm -rf /tmp/cost-living-platform-worker
+              mkdir -p /tmp/cost-living-platform-worker
+              wget -q -O /tmp/cost-living-platform-worker.zip "${FISSION_PACKAGE_URL}"
+              unzip -q /tmp/cost-living-platform-worker.zip -d /tmp/cost-living-platform-worker
+              export PYTHONPATH=/tmp/cost-living-platform-worker
+              exec python -m backend.processing.queue_worker
           envFrom:
             - configMapRef:
                 name: cost-living-platform-api-config

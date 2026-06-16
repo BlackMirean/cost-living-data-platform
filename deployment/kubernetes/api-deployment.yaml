@@ -17,8 +17,19 @@ spec:
     spec:
       containers:
         - name: api
-          image: ghcr.io/your-username/cost-living-platform-api:latest
+          image: fission/python-env-3.9
           imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -eu
+              test -n "${FISSION_PACKAGE_URL}"
+              rm -rf /tmp/cost-living-platform-api
+              mkdir -p /tmp/cost-living-platform-api
+              wget -q -O /tmp/cost-living-platform-api.zip "${FISSION_PACKAGE_URL}"
+              unzip -q /tmp/cost-living-platform-api.zip -d /tmp/cost-living-platform-api
+              export PYTHONPATH=/tmp/cost-living-platform-api
+              exec python -m uvicorn backend.api.main:app --host 0.0.0.0 --port 8000 --workers 1
           ports:
             - containerPort: 8000
           envFrom:

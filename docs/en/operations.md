@@ -49,6 +49,16 @@ docker compose --profile tools up kibana
 
 Docker Compose also starts Redis for runtime diagnostics and API caching. Fission jobs use the same Redis settings when `REDIS_ENABLED=true` in the cloud ConfigMaps.
 
+Full local integration check:
+
+```bash
+make integration
+```
+
+This creates a disposable Compose stack, seeds deterministic Elasticsearch data, rebuilds the Redis NLP queue, runs one worker pass, then executes smoke, OpenAPI contract and bounded stress checks.
+
+The integration target uses dedicated host ports by default to avoid accidentally connecting to existing local services: API `18000`, Elasticsearch `19200` and Redis `16379`.
+
 ## Elasticsearch Inspection
 
 With local Docker Compose:
@@ -90,33 +100,40 @@ python scripts/stress_cost_living_platform_api.py \
   --timeout 120
 ```
 
-## Kubernetes API
-
-Build and push the API image:
+OpenAPI contract check:
 
 ```bash
-docker build -f deployment/docker/api.Dockerfile \
-  -t ghcr.io/your-username/cost-living-platform-api:latest .
-docker push ghcr.io/your-username/cost-living-platform-api:latest
+python scripts/openapi_contract_check.py \
+  --base-url http://127.0.0.1:8000 \
+  --prefix /api/cost-living \
+  --timeout 120
 ```
 
-Update `deployment/kubernetes/api-deployment.yaml` with your image, then apply:
+## Cloud Runtime
+
+The cloud deployment has one code package. Fission scheduled functions, the FastAPI API Deployment and the KEDA-scaled NLP worker all consume the same source package built from the repository.
+
+Create real Secrets from the example templates, then deploy:
 
 ```bash
-kubectl apply -f deployment/kubernetes/namespace.yaml
-kubectl apply -f deployment/kubernetes/secrets.example.yaml
-kubectl apply -f deployment/kubernetes/configmap.yaml
-kubectl apply -f deployment/kubernetes/api-deployment.yaml
-kubectl apply -f deployment/kubernetes/api-service.yaml
+make cloud-deploy
 ```
 
-Port-forward:
+The deploy target builds the package, updates Fission, applies Redis persistent storage, applies the Kubernetes API and worker manifests, waits for rollout and checks live resource drift.
+
+Drift check only:
+
+```bash
+make cloud-drift
+```
+
+Port-forward the API:
 
 ```bash
 kubectl -n cost-living port-forward svc/cost-living-platform-api 8010:80
 ```
 
-Check:
+Check the deployed service:
 
 ```bash
 curl -s http://127.0.0.1:8010/api/cost-living/health
@@ -149,10 +166,11 @@ Detailed commands are in [deployment/fission/package_commands.md](../../deployme
 
 ## Optional Redis Runtime Services
 
-Deploy Redis before enabling runtime coordination:
+Redis is part of the recommended cloud runtime and uses a PersistentVolumeClaim for append-only queue/event persistence:
 
 ```bash
 kubectl apply -f deployment/redis/redis.yaml
+kubectl -n redis get pvc redis-data
 ```
 
 The provided Kubernetes and Fission ConfigMaps enable Redis. Redis is used for scheduled job locks, lifecycle events, shared API response caching and the NLP work queue; Elasticsearch still stores document state.
@@ -175,6 +193,19 @@ Operational checks:
 ```
 
 The queue status response includes active queue depth and dead-letter depth. A non-zero dead-letter depth should be investigated before treating a run as complete.
+
+Rebuild queue messages from Elasticsearch processing state:
+
+```bash
+make requeue-nlp
+```
+
+Dry run:
+
+```bash
+source scripts/load_cloud_env.sh
+python scripts/requeue_pending_nlp.py --dry-run
+```
 
 ## Elasticsearch Lifecycle
 
@@ -204,6 +235,8 @@ The API exposes Prometheus metrics, request-id propagation, rate limit status an
 ```
 
 Every response includes `X-Request-ID`. Clients can provide their own `X-Request-ID`; otherwise the API generates one and includes it in structured request logs.
+
+Performance baselines are recorded in [performance_baseline.md](performance_baseline.md) after cloud validation runs.
 
 ## GDELT Archive Ingestion
 
@@ -280,8 +313,4 @@ For a Kubernetes port-forward, use `API_BASE_URL=http://127.0.0.1:8010`.
 
 ## Validation Snapshot
 
-The repository-level test suite currently covers harvesters, GDELT archive processing and backfill resume behaviour, NLP processing, analytics queries, source plugins, Redis runtime queue logic, API cache behaviour, rate limiting, work queues, Elasticsearch lifecycle templates and API route wiring.
-
-```text
-57 pytest tests passing
-```
+The repository-level test suite covers harvesters, GDELT archive processing and backfill resume behaviour, NLP processing, analytics queries, source plugins, Redis runtime queue logic, API cache behaviour, rate limiting, work queues, Elasticsearch lifecycle templates and API route wiring. CI adds Docker Compose integration, OpenAPI contract checks, Docker build verification, image scanning and release artifact generation.

@@ -1,6 +1,6 @@
 # System Architecture
 
-The platform monitors Australian cost-of-living pressure using public social posts, media coverage and official CPI indicators. It has three runtime layers:
+The platform monitors Australian cost-of-living pressure using public social posts, media coverage and official CPI indicators. It has four runtime layers:
 
 - Fission scheduled jobs for ingestion, raw integration and CPI updates.
 - KEDA-scaled Kubernetes workers for NLP processing.
@@ -141,9 +141,9 @@ GDELT measures media coverage, not personal sentiment, so social and media analy
 
 1. Add a harvester for the new source.
 2. Write source records into a source-specific raw stream index.
-4. Add normalisation support in `scripts/import_raw_streams.py` when needed.
-5. Add Fission function and timer manifests.
-6. Run the raw integrator, KEDA NLP worker, API smoke test and notebook checks.
+3. Add normalisation support in `scripts/import_raw_streams.py` when needed.
+4. Add Fission function and timer manifests.
+5. Run the raw integrator, KEDA NLP worker, API smoke test and notebook checks.
 
 The system uses registry-based extension, not runtime plugin loading.
 

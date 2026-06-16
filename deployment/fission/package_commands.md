@@ -1,14 +1,18 @@
 # Fission Package Commands
 
-These commands deploy the scheduled pipeline functions.
+These commands are the manual form of the scheduled pipeline deployment. The recommended deployment entrypoint is:
+
+```bash
+make cloud-deploy
+```
+
+Use the commands below when debugging one layer at a time.
 
 ## Build Source Package
 
 ```bash
 chmod +x build.sh
-zip -r cost-living-data-platform.zip \
-  backend scripts database requirements.txt requirements-fission.txt build.sh \
-  -x "**/__pycache__/*" "*.pyc"
+scripts/build_fission_package.sh
 ```
 
 Do not commit generated zip files.

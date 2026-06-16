@@ -40,19 +40,17 @@ cost_living_indicators
 cost_living_monthly_topic_metrics
 ```
 
-## Deployment Order
+## Deployment
 
-1. Create a real `cost-living-platform-secrets` Secret from `platform-secrets.example.yaml`.
-2. Apply `platform-environment.yaml`.
-3. Build the source package.
-4. Create or update `cost-living-platform-pipeline-pkg`.
-5. Apply `platform-configmap.yaml`.
-6. Apply `platform-pipeline-functions.yaml`.
-7. Test functions manually.
-8. Apply `platform-pipeline-timers.yaml`.
-9. Apply `deployment/kubernetes/nlp-worker-deployment.yaml` so KEDA can scale NLP processing from the Redis queue.
+Create a real `cost-living-platform-secrets` Secret from `platform-secrets.example.yaml` and a real API Secret from `../kubernetes/secrets.example.yaml`, then run:
 
-Detailed commands are in [package_commands.md](package_commands.md).
+```bash
+make cloud-deploy
+```
+
+The deploy target builds the source package, creates or updates `cost-living-platform-pipeline-pkg`, applies the Fission environment, ConfigMap, functions and timers, applies Redis, patches the package URL into the Kubernetes API ConfigMap and rolls the API Deployment.
+
+Detailed manual commands for debugging are in [package_commands.md](package_commands.md).
 
 ## Optional Redis Runtime Services
 

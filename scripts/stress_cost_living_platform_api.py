@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+from collections import Counter, defaultdict
 import json
 import statistics
 import time
@@ -58,6 +59,16 @@ def percentile(values: list[float], fraction: float) -> float | None:
     return ordered[index]
 
 
+def duration_summary(values: list[float]) -> dict[str, float | None]:
+    if not values:
+        return {"average_duration": None, "p95_duration": None, "max_duration": None}
+    return {
+        "average_duration": round(statistics.mean(values), 3),
+        "p95_duration": round(percentile(values, 0.95) or 0, 3),
+        "max_duration": round(max(values), 3),
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run a bounded API burst test.")
     parser.add_argument("--base-url", default="http://127.0.0.1:8010")
@@ -65,6 +76,7 @@ def main() -> int:
     parser.add_argument("--rounds", type=int, default=2)
     parser.add_argument("--workers", type=int, default=2)
     parser.add_argument("--timeout", type=float, default=120.0)
+    parser.add_argument("--output-json", default="", help="Optional path for the summary JSON.")
     args = parser.parse_args()
 
     requests_to_run = [
@@ -83,18 +95,30 @@ def main() -> int:
 
     durations = [float(item["duration"]) for item in results if item.get("duration") is not None]
     failures = [item for item in results if not item.get("ok")]
+    status_counts = Counter(str(item.get("status_code") or "error") for item in results)
+    per_path_durations: dict[str, list[float]] = defaultdict(list)
+    for item in results:
+        if item.get("duration") is not None:
+            per_path_durations[str(item["path"])].append(float(item["duration"]))
     summary = {
         "total_requests": len(results),
         "endpoint_count": len(REQUESTS),
         "success_count": len(results) - len(failures),
         "failure_count": len(failures),
-        "average_duration": round(statistics.mean(durations), 3) if durations else None,
-        "p95_duration": round(percentile(durations, 0.95) or 0, 3) if durations else None,
-        "max_duration": round(max(durations), 3) if durations else None,
+        **duration_summary(durations),
+        "status_counts": dict(sorted(status_counts.items())),
+        "rate_limited_requests": int(status_counts.get("429", 0)),
+        "per_path": {
+            path: {"count": len(values), **duration_summary(values)}
+            for path, values in sorted(per_path_durations.items())
+        },
         "elapsed_seconds": round(elapsed, 3),
         "workers": args.workers,
         "rounds": args.rounds,
     }
+    if args.output_json:
+        with open(args.output_json, "w", encoding="utf-8") as output_file:
+            json.dump({"summary": summary, "results": results}, output_file, ensure_ascii=False, indent=2)
     print(json.dumps(summary, ensure_ascii=False, indent=2), flush=True)
     if failures:
         print(json.dumps({"sample_failures": failures[:5]}, ensure_ascii=False, indent=2), flush=True)

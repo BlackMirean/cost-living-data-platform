@@ -249,7 +249,7 @@ http://127.0.0.1:8000/docs
 
 ## Docker Compose
 
-Docker Compose starts Elasticsearch, the API and an optional Kibana profile:
+Docker Compose starts Redis, Elasticsearch, the API and an optional Kibana profile:
 
 ```bash
 docker compose up --build
@@ -267,6 +267,14 @@ Kibana can be started when needed:
 docker compose --profile tools up kibana
 ```
 
+Run the full local integration path with seeded Elasticsearch data, Redis queueing, one NLP worker pass, API smoke checks, OpenAPI contract checks and a bounded stress run:
+
+```bash
+make integration
+```
+
+The integration target uses isolated host ports by default: API `18000`, Elasticsearch `19200` and Redis `16379`.
+
 ## Cloud Deployment
 
 The deployment templates are split by responsibility:
@@ -276,37 +284,42 @@ The deployment templates are split by responsibility:
 | [deployment/kubernetes](deployment/kubernetes) | FastAPI API, HPA, NLP worker and KEDA ScaledObject |
 | [deployment/fission](deployment/fission) | Scheduled ingestion, raw integration and CPI functions |
 | [deployment/redis](deployment/redis) | Redis job locks, events, API cache and NLP work queue |
-| [deployment/docker/api.Dockerfile](deployment/docker/api.Dockerfile) | API image build |
+| [deployment/docker/api.Dockerfile](deployment/docker/api.Dockerfile) | Local and CI image build verification |
 
-The Kubernetes API manifest expects a built image. Replace `ghcr.io/your-username/cost-living-platform-api:latest` with your registry image before applying it.
+The cloud runtime uses one Fission source package for scheduled functions, the FastAPI service and the queue worker. This keeps the deployed code path aligned with the repository and avoids a second API implementation.
 
 Fission manifests include only scheduled pipeline jobs. They do not deploy duplicate HTTP API functions.
 
-Deploy Redis for distributed job locks, runtime event diagnostics, shared API response caching and the KEDA-driven NLP queue:
+Create real Kubernetes Secrets from the example templates, then deploy the complete runtime:
 
 ```bash
-kubectl apply -f deployment/redis/redis.yaml
+make cloud-deploy
 ```
 
-The Kubernetes and Fission deployment ConfigMaps enable Redis by default. Set `REDIS_ENABLED=false` only for local or single-process deployments without KEDA workers.
+`make cloud-deploy` builds the Fission package, updates the Fission functions, applies Redis with persistent storage, applies the API and worker manifests, waits for rollout and runs a cloud drift check.
+
+Validate an existing cluster without changing resources:
+
+```bash
+make cloud-drift
+```
+
+Redis is enabled by default for distributed job locks, runtime event diagnostics, shared API response caching and the KEDA-driven NLP queue. Set `REDIS_ENABLED=false` only for isolated single-process deployments without KEDA workers.
 
 ## Validation
-
-Current repository validation:
-
-```text
-63 pytest tests passing
-```
 
 Useful checks:
 
 ```bash
 make ci
+make integration
 make smoke
+make contract
 make stress
+make cloud-drift
 ```
 
-`make public-check` scans tracked files, notebooks and the rendered report for local credentials, stale private paths, uncleared notebook output and sensitive release patterns before a public release.
+CI runs unit tests, public-release hygiene checks, Docker Compose integration, Docker image build and vulnerability scanning, and publishes the Fission package plus rendered report as release artifacts. `make public-check` scans tracked files, notebooks and the rendered report for local credentials, stale private paths, uncleared notebook output and sensitive release patterns before a public release.
 
 ## Contributing and Security
 
