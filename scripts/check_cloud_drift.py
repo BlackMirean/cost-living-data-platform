@@ -55,7 +55,11 @@ def manifest_by_kind_name(path: Path) -> dict[tuple[str, str], dict[str, Any]]:
 
 
 def check_deployment(name: str, namespace: str, manifest_path: Path, failures: list[str]) -> None:
-    expected = load_yaml(manifest_path)
+    docs = manifest_by_kind_name(manifest_path)
+    expected = docs.get(("Deployment", name))
+    if expected is None:
+        failures.append(f"{manifest_path.relative_to(REPO_ROOT)} does not define deployment/{name}")
+        return
     live = run_json(["kubectl", "-n", namespace, "get", "deployment", name, "-o", "json"])
     expected_container = compact_container(first_container(expected))
     live_container = compact_container(first_container(live))

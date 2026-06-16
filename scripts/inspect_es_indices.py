@@ -97,7 +97,12 @@ def truncate(value: Any, max_length: int = 220) -> Any:
 
 def mapping_properties(client: Any, index: str) -> dict[str, Any]:
     mapping = client.indices.get_mapping(index=index)
-    return mapping[index].get("mappings", {}).get("properties", {})
+    index_mapping = mapping.get(index)
+    if index_mapping is None and mapping:
+        index_mapping = next(iter(mapping.values()))
+    if index_mapping is None:
+        return {}
+    return index_mapping.get("mappings", {}).get("properties", {})
 
 
 def field_type(properties: dict[str, Any], field: str) -> str | None:
